@@ -65,7 +65,7 @@ This model is a supervised binary image classification component designed to dis
   - **Learning rate:** `TBD`
   - **Batch size:** `TBD`
   - **Dropout:** `TBD`
-  - **Early stopping:** `TBD`
+  - **Epochs:** 20
 
 - **Experiment tracking:** MLflow
 - **Data versioning:** DVC
@@ -109,12 +109,11 @@ The model and pipeline may be reused and extended for further experimentation or
 
 - **Limited optimization search:** The final model is selected from a predefined set of experiments based on the CIFAKE publication and related CIFAR-10 research. Since only a limited number of configurations are tested, other architectures or hyperparameters may achieve better performance.
 
-
 ### Recommendations
 
 The model should not be treated as a production ready AI generated image detector without further training and evaluation.
 
-When retraining the model, balanced `REAL` and `FAKE` distributions should be maintained. Semantic class labels should also be provided, allowing the pipeline to preserve object distributions across generated splits. A balanced representation of semantic classes is recommended to avoid overrepresenting particular types of content. If semantic class information is unavailable, the training data should instead contain a wide variety of objects and visual content to improve generalization to unseen content.
+When retraining the model, balanced `REAL` and `FAKE` distributions are strongly suggested. Semantic class labels should also be provided, allowing the pipeline to preserve object distributions across generated splits. A balanced representation of semantic classes is also recommended. If semantic class information is unavailable, the training data should instead contain a wide variety of objects and visual content to improve generalization to unseen content.
 
 If pre-existing splits are provided, they should follow good practices to prevent data leakage. The pipeline will check for duplicate filenames and duplicate image content across splits and report potential inconsistencies before training.
 
@@ -127,42 +126,56 @@ Use the code below to get started with the model.
 {{ get_started_code | default("[More Information Needed]", true)}}
 
 ## Training Details
--- EVERYTHING STILL NEEDS TO BE DEFINED--
+
 ### Training Data
 
-The model is trained using the CIFAKE: Real and AI-Generated Synthetic Images dataset.
+The model is trained on the **CIFAKE: Real and AI-Generated Synthetic Images** dataset.
 
-CIFAKE contains 120,000 images divided into two balanced classes:
+CIFAKE contains 120,000 32x32 RGB images divided into two balanced classes:
 
-REAL: 60,000 real images collected from the CIFAR-10 dataset.
-FAKE: 60,000 AI-generated synthetic images generated using Stable Diffusion 1.4.
-Training set: 100,000 images, consisting of 50,000 REAL and 50,000 FAKE images.
-Testing set: 20,000 images, consisting of 10,000 REAL and 10,000 FAKE images.
+- **REAL:** 60,000 real images collected from the CIFAR-10 dataset.
+- **FAKE:** 60,000 AI-generated synthetic images generated using Stable Diffusion 1.4.
+- **Training set:** 100,000 images, consisting of 50,000 `REAL` and 50,000 `FAKE` images.
+- **Testing set:** 20,000 images, consisting of 10,000 `REAL` and 10,000 `FAKE` images.
 
-The images are 32 × 32 RGB images and represent ten semantic categories corresponding to the CIFAR-10 classes.
+The images on CIFAKE represent the ten semantic categories from CIFAR-10: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Within each `REAL` and `FAKE` split, these categories are uniformly distributed, with 5,000 images per category in training and 1,000 per category in testing.
 
-Dataset source:
+**Dataset source:** [CIFAKE on Kaggle](https://www.kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images)
 
-https://www.kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images
+#### Preprocessing
+
+The data pipeline performs the following preprocessing and validation steps:
+
+- Load provided metadata or generate it from the directory structure and filenames.
+- Validate image paths, target labels (`REAL` / `FAKE`), semantic classes if available, and existing data splits.
+- Check for duplicate filenames and duplicate image content across and within splits.
+- Validate target and semantic class distributions.
+- If no split is provided, generate one using the available class information for stratification.
+- Convert non-RGB images to RGB.
+- Center crop images when necessary to match the expected aspect ratio.
+- Resize images to 32×32 using bilinear interpolation.
+- Normalize RGB pixel values from `[0, 255]` to `[0, 1]`.
+
+CIFAKE already provides valid and balanced train/test splits with uniform semantic class distributions, and all images are 32×32 RGB. The dataset therefore passes the corresponding validation checks without requiring resplitting, color conversion, cropping, or resizing. Pixel normalization is still applied before training.
 
 ### Training Procedure
 
-<!-- This relates heavily to the Technical Specifications. Content here should link to that section when it is relevant to the training procedure. -->
-
-#### Preprocessing [optional]
-
-{{ preprocessing | default("[More Information Needed]", true)}}
-
+- **Model:** CNN with 2×Conv2D(32 filters) + Dense(64).
+- **Input:** 32×32 RGB images with pixel values normalized to `[0, 1]`.
+- **Loss function:** Binary cross entropy.
+- **Model selection:** Macro F1 and ROC-AUC on the validation set are used to compare model configurations during experimentation.
+- **Tracking:** MLflow for experiment tracking and CodeCarbon for emission tracking.
 
 #### Training Hyperparameters
 
-- **Training regime:** {{ training_regime | default("[More Information Needed]", true)}} <!--fp32, fp16 mixed precision, bf16 mixed precision, bf16 non-mixed precision, fp16 non-mixed precision, fp8 mixed precision -->
-
-#### Speeds, Sizes, Times [optional]
-
-<!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
-
-{{ speeds_sizes_times | default("[More Information Needed]", true)}}
+- **Kernel size:** `[3×3, 5×5]`
+- **Padding:** `['valid', 'same']`
+- **Pooling:** `['max', 'average']`, with 2×2 pooling size
+- **Optimizer:** `Adam`
+- **Learning rate:** `[10⁻², 10⁻³, 10⁻⁴]`
+- **Batch size:** `[32, 64, 128]`
+- **Dropout:** `[0, 0.125, 0.25]`, evaluated only if overfitting is observed
+- **Epochs:** `20`
 
 ## Evaluation
 
