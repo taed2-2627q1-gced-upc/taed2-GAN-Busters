@@ -1,0 +1,21 @@
+stages:
+  download_data:
+    cmd: py -m gan_busters.dataset
+    outs:
+      - data/raw/cifake
+
+  corrupt_data:
+    cmd: py -m gan_busters.corrupt_data
+    deps:
+      - data/raw/cifake
+      - gan_busters/corrupt_data.py
+    outs:
+      - data/interim/cifake_corrupted
+
+  build_features:
+    cmd: py -m gan_busters.features
+    deps:
+      - data/interim/cifake_corrupted
+      - gan_busters/features.py
+    outs:
+      - data/processed/cifake_clean
