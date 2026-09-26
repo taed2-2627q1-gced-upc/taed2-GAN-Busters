@@ -5,4 +5,11 @@ python-dotenv
 ruff
 tqdm
 typer
+
+tensorflow==2.21.0
+scikit-learn==1.7.2
+mlflow==3.16.1
+matplotlib==3.10.9
+codecarbon==3.3.1
+
 -e .
