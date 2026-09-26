@@ -48,7 +48,7 @@ This model is a supervised binary image classification component designed to dis
 - **Model type:** Convolutional neural network (CNN)
 - **Framework:** TensorFlow/Keras
 - **Input:** RGB, 32×32
-- **Output:** Binary class (`REAL` / `FAKE`) + corresponding probability
+- **Output:** Binary class (`REAL` / `FAKE`) + probability of the predicted class
 - **Label encoding:** `REAL = 0`, `FAKE = 1`
 
 - **CNN architecture:**
@@ -83,6 +83,8 @@ This model is a supervised binary image classification component designed to dis
 - **Reference baseline:** [CIFAKE Publication](https://ieeexplore.ieee.org/abstract/document/10409290) | [CIFAR-10 Hyperparameter Selection Study](https://researchonline.gcu.ac.uk/ws/portalfiles/portal/26022569/Paper103.pdf)
 - **Demo/Application:** `TBD`
 
+--
+
 ## Uses
 
 ### Direct Use
@@ -95,15 +97,17 @@ The model is integrated into an end-to-end MLOps pipeline, developed primarily f
 
 The model and pipeline may be reused and extended for further experimentation or development, with appropriate attribution to the original repository and implementation. Potential downstream uses include fine tuning or improving the model with additional data, reusing the pipeline with alternative model configurations, or integrating the model and pipeline into a larger application.
 
+--
+
 ## Bias, Risks, and Limitations
 
 - **Generator dependency:** CIFAKE synthetic images were generated using [Stable Diffusion v1.4](https://openaccess.thecvf.com/content/CVPR2022/papers/Rombach_High-Resolution_Image_Synthesis_With_Latent_Diffusion_Models_CVPR_2022_paper.pdf). The model may learn artifacts specific to this generator and may not generalize well to images produced by other generative models.
 
 - **Image representation:** The model operates on 32×32 RGB images. Inputs with different resolutions, aspect ratios, or color formats are preprocessed to match this representation, which may result in information loss and affect prediction quality.
 
-- **Limited object diversity:** CIFAKE is derived from the ten CIFAR-10 object classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Performance may decrease for objects or visual content not represented during training.
+- **Limited object diversity:** CIFAKE is derived from the ten CIFAR-10 object/semantic classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Performance may decrease for objects or visual content not represented during training.
 
-- **Split stratification:** The provided CIFAKE split preserves both the `REAL`/`FAKE` distribution and the distribution of the ten CIFAR-10 object classes, with semantic class information encoded in the filenames. For new datasets, the pipeline can preserve target class balance, but object level stratification is only possible when the semantic class information is available.
+- **Split stratification:** The provided CIFAKE split preserves both the `REAL`/`FAKE` distribution and the distribution of the ten CIFAR-10 object classes, with semantic class information encoded in the filenames. For new datasets without a split, the pipeline can make the most optimal split preserving target class balance, but semantic class stratification is only possible when the semantic class information is available.
 
 - **Reference reproducibility:** Some implementation and evaluation details of the original CIFAKE experiments are not fully specified, including the construction of the validation set, as well as other parts of the convolutional configuration. Their reported results may not be directly comparable to this implementation. This project uses a separate validation set for model selection and keeps the test set isolated until final evaluation.
 
@@ -113,40 +117,33 @@ The model and pipeline may be reused and extended for further experimentation or
 
 The model should not be treated as a production ready AI generated image detector without further training and evaluation.
 
-When retraining the model, balanced `REAL` and `FAKE` distributions are strongly suggested. Semantic class labels should also be provided, allowing the pipeline to preserve object distributions across generated splits. A balanced representation of semantic classes is also recommended. If semantic class information is unavailable, the training data should instead contain a wide variety of objects and visual content to improve generalization to unseen content.
+When retraining the model, balanced `REAL` and `FAKE` distributions are strongly suggested. Semantic class labels should also be provided if possible, allowing the pipeline to preserve object distributions across generated splits. A balanced representation of semantic classes is also recommended. If semantic class information is unavailable, the training data should instead contain a wide variety of objects and visual content to improve generalization to unseen content.
 
 If pre-existing splits are provided, they should follow good practices to prevent data leakage. The pipeline will check for duplicate filenames and duplicate image content across splits and report potential inconsistencies before training.
 
 Before production use, the model should be evaluated beyond the training distribution. This should include unseen object types, images from different real world sources and generative models, and common transformations such as cropping, rotation, resizing, and compression.
 
-## How to Get Started with the Model
-
-Use the code below to get started with the model.
-
-{{ get_started_code | default("[More Information Needed]", true)}}
+--
 
 ## Training Details
 
 ### Training Data
 
-The model is trained on the **CIFAKE: Real and AI-Generated Synthetic Images** dataset.
+Dataset: **CIFAKE: Real and AI-Generated Synthetic Images**
 
-CIFAKE contains 120,000 32x32 RGB images divided into two balanced classes:
-
-- **REAL:** 60,000 real images collected from the CIFAR-10 dataset.
-- **FAKE:** 60,000 AI-generated synthetic images generated using Stable Diffusion 1.4.
 - **Training set:** 100,000 images, consisting of 50,000 `REAL` and 50,000 `FAKE` images.
-- **Testing set:** 20,000 images, consisting of 10,000 `REAL` and 10,000 `FAKE` images.
+- **Image representation:** 32×32 RGB images.
+- **Semantic classes:** Ten CIFAR-10 categories, uniformly represented within both `REAL` and `FAKE`, with 5,000 images per category.
 
-The images on CIFAKE represent the ten semantic categories from CIFAR-10: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Within each `REAL` and `FAKE` split, these categories are uniformly distributed, with 5,000 images per category in training and 1,000 per category in testing.
+A validation split is created from the training set for model selection while preserving the available target and semantic class distributions.
 
-**Dataset source:** [CIFAKE on Kaggle](https://www.kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images)
+For further details, see the [Dataset Card](../data/dataset_card.md).
 
 #### Preprocessing
 
 The data pipeline performs the following preprocessing and validation steps:
 
-- Load provided metadata or generate it from the directory structure and filenames.
+- Load provided metadata or derive dataset information from the directory structure and filenames.
 - Validate image paths, target labels (`REAL` / `FAKE`), semantic classes if available, and existing data splits.
 - Check for duplicate filenames and duplicate image content across and within splits.
 - Validate target and semantic class distributions.
@@ -156,13 +153,15 @@ The data pipeline performs the following preprocessing and validation steps:
 - Resize images to 32×32 using bilinear interpolation.
 - Normalize RGB pixel values from `[0, 255]` to `[0, 1]`.
 
-CIFAKE already provides valid and balanced train/test splits with uniform semantic class distributions, and all images are 32×32 RGB. The dataset therefore passes the corresponding validation checks without requiring resplitting, color conversion, cropping, or resizing. Pixel normalization is still applied before training.
+CIFAKE already provides valid and balanced train/test splits with uniform semantic class distributions, and all images are 32×32 RGB. The dataset therefore passes the corresponding validation checks without requiring resplitting, color conversion, cropping, or resizing. Pixel normalization is still applied before training to improve training stability.
 
 ### Training Procedure
 
 - **Model:** CNN with 2×Conv2D(32 filters) + Dense(64).
 - **Input:** 32×32 RGB images with pixel values normalized to `[0, 1]`.
 - **Loss function:** Binary cross entropy.
+- **Optimizer:** Adam.
+- **Epochs:** 20.
 - **Model selection:** Macro F1 and ROC-AUC on the validation set are used to compare model configurations during experimentation.
 - **Tracking:** MLflow for experiment tracking and CodeCarbon for emission tracking.
 
@@ -171,108 +170,81 @@ CIFAKE already provides valid and balanced train/test splits with uniform semant
 - **Kernel size:** `[3×3, 5×5]`
 - **Padding:** `['valid', 'same']`
 - **Pooling:** `['max', 'average']`, with 2×2 pooling size
-- **Optimizer:** `Adam`
 - **Learning rate:** `[10⁻², 10⁻³, 10⁻⁴]`
 - **Batch size:** `[32, 64, 128]`
 - **Dropout:** `[0, 0.125, 0.25]`, evaluated only if overfitting is observed
-- **Epochs:** `20`
+
+---
 
 ## Evaluation
 
-<!-- This section describes the evaluation protocols and provides the results. -->
+### Testing Data
 
-### Testing Data, Factors & Metrics
+Dataset: **CIFAKE (official test split)**
 
-#### Testing Data
+- **Testing set:** 20,000 images, consisting of 10,000 `REAL` and 10,000 `FAKE` images.
+- **Image representation:** 32×32 RGB images.
+- **Semantic classes:** Ten CIFAR-10 categories, uniformly represented within both `REAL` and `FAKE`, with 1,000 images per category.
 
-The CIFAKE test set contains 20,000 images:
+For further details, see the [Dataset Card](../data/dataset_card.md).
 
-10,000 REAL images.
-10,000 AI-generated FAKE images.
+### Factors
 
-#### Factors
+Final model performance will also be evaluated across:
 
-- Image class: REAL vs. AI-GENERATED.
-- CIFAR-10 semantic category.
-- Image characteristics and visual content.
-- Potential differences between the training distribution and external images.
+- **Semantic class:** Compare performance across the ten CIFAKE semantic classes using the official test set.
+- **External images:** Evaluate images from sources outside CIFAKE to assess performance beyond the training distribution.
+- **Input preprocessing:** Evaluate external images with different original dimensions and aspect ratios to assess the effect of cropping and resizing to the required 32×32 input representation.
 
-#### Metrics
+### Metrics
 
-<!-- These are the evaluation metrics being used, ideally with a description of why. -->
+Model performance is evaluated primarily using **Macro F1** and **ROC AUC**, with **precision** and **recall** providing additional information about classification behavior.
 
-{{ testing_metrics | default("[More Information Needed]", true)}}
+#### Macro F1
+
+Macro F1 calculates the F1 score independently for each class and gives equal importance to `REAL` and `FAKE`. Class predictions are obtained using a fixed decision threshold of `0.5`.
+
+#### Precision and Recall
+
+Precision and recall are reported alongside Macro F1 to provide additional information about classification errors. With `FAKE` treated as the positive class:
+
+- **Precision** measures how often images predicted as `FAKE` are actually `FAKE`.
+- **Recall** measures how many `FAKE` images are correctly detected.
+
+Both metrics are calculated using the fixed `0.5` decision threshold.
+
+#### ROC AUC
+
+ROC AUC evaluates the model's ability to distinguish between `REAL` and `FAKE` using the predicted probabilities across all classification thresholds. Unlike Macro F1, precision, and recall, it is independent of the fixed `0.5` decision threshold.
 
 ### Results
 
-{{ results | default("[More Information Needed]", true)}}
+Final performance on the isolated CIFAKE test set:
 
-#### Summary
+- **Macro F1:** `TBD`
+- **Precision:** `TBD`
+- **Recall:** `TBD`
+- **ROC-AUC:** `TBD`
 
-{{ results_summary | default("", true) }}
-
-## Model Examination [optional]
-
-<!-- Relevant interpretability work for the model goes here -->
-
-{{ model_examination | default("[More Information Needed]", true)}}
+Training and validation results from model experimentation, together with hyperparameters, learning curves, and relevant artifacts, are tracked and visualized using MLflow.
 
 ## Environmental Impact
 
-<!-- Total emissions (in grams of CO2eq) and additional considerations, such as electricity usage, go here. Edit the suggested text below accordingly -->
+The environmental impact of model training and experimentation is tracked using CodeCarbon.
 
-Carbon emissions can be estimated using the [Machine Learning Impact calculator](https://mlco2.github.io/impact#compute) presented in [Lacoste et al. (2019)](https://arxiv.org/abs/1910.09700).
+- **Hardware type:** NVIDIA GeForce RTX 4050 with 6 GB VRAM
+- **Compute location:** Local
+- **Total training time:** `TBD`
+- **Energy consumed:** `TBD`
+- **Carbon emitted:** `TBD`
+- **Tracking tool:** CodeCarbon
 
-- **Hardware Type:** {{ hardware_type | default("[More Information Needed]", true)}}
-- **Hours used:** {{ hours_used | default("[More Information Needed]", true)}}
-- **Cloud Provider:** {{ cloud_provider | default("[More Information Needed]", true)}}
-- **Compute Region:** {{ cloud_region | default("[More Information Needed]", true)}}
-- **Carbon Emitted:** {{ co2_emitted | default("[More Information Needed]", true)}}
+--
 
-## Technical Specifications [optional]
+## Summary
 
-### Model Architecture and Objective
+`TBD`
 
-{{ model_specs | default("[More Information Needed]", true)}}
+## Model Card Authors
 
-### Compute Infrastructure
-
-{{ compute_infrastructure | default("[More Information Needed]", true)}}
-
-#### Hardware
-
-{{ hardware_requirements | default("[More Information Needed]", true)}}
-
-#### Software
-
-{{ software | default("[More Information Needed]", true)}}
-
-## Citation [optional]
-
-<!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
-
-**BibTeX:**
-
-{{ citation_bibtex | default("[More Information Needed]", true)}}
-
-**APA:**
-
-{{ citation_apa | default("[More Information Needed]", true)}}
-
-## Glossary [optional]
-
-<!-- If relevant, include terms and calculations in this section that can help readers understand the model or model card. -->
-
-{{ glossary | default("[More Information Needed]", true)}}
-
-## More Information [optional]
-
-{{ more_information | default("[More Information Needed]", true)}}
-
-## Model Card Authors [optional]
-
-{{ model_card_authors | default("[More Information Needed]", true)}}
-
-## Model Card Contact
-
-{{ model_card_contact | default("[More Information Needed]", true)}}
+Maribel Preite, Luis Salinas, Rebeca Torrecilla, Aina Vila
