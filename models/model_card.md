@@ -48,7 +48,8 @@ This model is a supervised binary image classification component designed to dis
 - **Model type:** Convolutional neural network (CNN)
 - **Framework:** TensorFlow/Keras
 - **Input:** RGB, 32×32
-- **Output:** Binary class (`REAL` / `FAKE`) + probability of the predicted class
+- **Model output:** Probability of `FAKE` from the sigmoid output.
+- **Prediction output:** Binary class (`REAL` / `FAKE`) + probability of the predicted class.
 - **Label encoding:** `REAL = 0`, `FAKE = 1`
 
 - **CNN architecture:**
@@ -97,6 +98,10 @@ The model is integrated into an end-to-end MLOps pipeline, developed primarily f
 
 The model and pipeline may be reused and extended for further experimentation or development, with appropriate attribution to the original repository and implementation. Potential downstream uses include fine tuning or improving the model with additional data, reusing the pipeline with alternative model configurations, or integrating the model and pipeline into a larger application.
 
+### Out-of-Scope Use
+
+The model is not intended to provide definitive verification of image authenticity or to serve as a state of the art AI generated image detector.
+
 --
 
 ## Bias, Risks, and Limitations
@@ -107,7 +112,7 @@ The model and pipeline may be reused and extended for further experimentation or
 
 - **Limited object diversity:** CIFAKE is derived from the ten CIFAR-10 object/semantic classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Performance may decrease for objects or visual content not represented during training.
 
-- **Split stratification:** The provided CIFAKE split preserves both the `REAL`/`FAKE` distribution and the distribution of the ten CIFAR-10 object classes, with semantic class information encoded in the filenames. For new datasets without a split, the pipeline can make the most optimal split preserving target class balance, but semantic class stratification is only possible when the semantic class information is available.
+- **Split stratification:** The provided CIFAKE split preserves both the `REAL`/`FAKE` distribution and the distribution of the ten CIFAR-10 object classes, with semantic class information encoded in the filenames. For new datasets without a split, the pipeline can preserve target class balance through stratification, while semantic class stratification is only possible when this information is available.
 
 - **Reference reproducibility:** Some implementation and evaluation details of the original CIFAKE experiments are not fully specified, including the construction of the validation set, as well as other parts of the convolutional configuration. Their reported results may not be directly comparable to this implementation. This project uses a separate validation set for model selection and keeps the test set isolated until final evaluation.
 
@@ -117,9 +122,9 @@ The model and pipeline may be reused and extended for further experimentation or
 
 The model should not be treated as a production ready AI generated image detector without further training and evaluation.
 
-When retraining the model, balanced `REAL` and `FAKE` distributions are strongly suggested. Semantic class labels should also be provided if possible, allowing the pipeline to preserve object distributions across generated splits. A balanced representation of semantic classes is also recommended. If semantic class information is unavailable, the training data should instead contain a wide variety of objects and visual content to improve generalization to unseen content.
+When retraining the model, balanced `REAL` and `FAKE` distributions are strongly suggested. Semantic class labels should also be provided when available, allowing the pipeline to preserve semantic class distributions across generated splits. A balanced representation of semantic classes is also recommended. If semantic class information is unavailable, the training data should instead contain a wide variety of objects and visual content to improve generalization to unseen content.
 
-If pre-existing splits are provided, they should follow good practices to prevent data leakage. The pipeline will check for duplicate filenames and duplicate image content across splits and report potential inconsistencies before training.
+If pre-existing splits are provided, they should follow good practices to prevent data leakage. The pipeline will check for duplicate image content across splits and report potential inconsistencies before training.
 
 Before production use, the model should be evaluated beyond the training distribution. This should include unseen object types, images from different real world sources and generative models, and common transformations such as cropping, rotation, resizing, and compression.
 
@@ -131,11 +136,14 @@ Before production use, the model should be evaluated beyond the training distrib
 
 Dataset: **CIFAKE: Real and AI-Generated Synthetic Images**
 
-- **Training set:** 100,000 images, consisting of 50,000 `REAL` and 50,000 `FAKE` images.
-- **Image representation:** 32×32 RGB images.
-- **Semantic classes:** Ten CIFAR-10 categories, uniformly represented within both `REAL` and `FAKE`, with 5,000 images per category.
+The official CIFAKE training set contains 100,000 images, consisting of 50,000 `REAL` and 50,000 `FAKE` images.
 
-A validation split is created from the training set for model selection while preserving the available target and semantic class distributions.
+- **Training subset:** 80,000 images (80%), consisting of 40,000 `REAL` and 40,000 `FAKE` images.
+- **Validation subset:** 20,000 images (20%), consisting of 10,000 `REAL` and 10,000 `FAKE` images.
+- **Image representation:** 32×32 RGB images.
+- **Semantic classes:** Ten CIFAR-10 categories, uniformly represented within both `REAL` and `FAKE`.
+
+The training and validation subsets preserve both the target and semantic class distributions of the original training set. A fixed split is used across experiments to ensure consistent model comparison.
 
 For further details, see the [Dataset Card](../data/dataset_card.md).
 
@@ -145,7 +153,7 @@ The data pipeline performs the following preprocessing and validation steps:
 
 - Load provided metadata or derive dataset information from the directory structure and filenames.
 - Validate image paths, target labels (`REAL` / `FAKE`), semantic classes if available, and existing data splits.
-- Check for duplicate filenames and duplicate image content across and within splits.
+- Check for duplicate image content across and within splits.
 - Validate target and semantic class distributions.
 - If no split is provided, generate one using the available class information for stratification.
 - Convert non-RGB images to RGB.
@@ -155,7 +163,7 @@ The data pipeline performs the following preprocessing and validation steps:
 
 CIFAKE already provides valid and balanced train/test splits with uniform semantic class distributions, and all images are 32×32 RGB. The dataset therefore passes the corresponding validation checks without requiring resplitting, color conversion, cropping, or resizing. Pixel normalization is still applied before training to improve training stability.
 
-### Training Procedure
+### Training Configuration
 
 - **Model:** CNN with 2×Conv2D(32 filters) + Dense(64).
 - **Input:** 32×32 RGB images with pixel values normalized to `[0, 1]`.
@@ -165,7 +173,7 @@ CIFAKE already provides valid and balanced train/test splits with uniform semant
 - **Model selection:** Macro F1 and ROC-AUC on the validation set are used to compare model configurations during experimentation.
 - **Tracking:** MLflow for experiment tracking and CodeCarbon for emission tracking.
 
-#### Training Hyperparameters
+#### Experimental Hyperparameters
 
 - **Kernel size:** `[3×3, 5×5]`
 - **Padding:** `['valid', 'same']`
@@ -190,7 +198,7 @@ For further details, see the [Dataset Card](../data/dataset_card.md).
 
 ### Factors
 
-Final model performance will also be evaluated across:
+Final model performance will be evaluated across the following factors:
 
 - **Semantic class:** Compare performance across the ten CIFAKE semantic classes using the official test set.
 - **External images:** Evaluate images from sources outside CIFAKE to assess performance beyond the training distribution.
@@ -198,18 +206,18 @@ Final model performance will also be evaluated across:
 
 ### Metrics
 
-Model performance is evaluated primarily using **Macro F1** and **ROC AUC**, with **precision** and **recall** providing additional information about classification behavior.
+Model performance is evaluated primarily using **Macro F1** and **ROC AUC**, with class specific **precision** and **recall** providing additional information about classification behavior.
 
 #### Macro F1
 
-Macro F1 calculates the F1 score independently for each class and gives equal importance to `REAL` and `FAKE`. Class predictions are obtained using a fixed decision threshold of `0.5`.
+Macro F1 calculates the F1 score separately for `REAL` and `FAKE` classes and averages the two scores, giving both classes equal importance. Class predictions are obtained using a fixed decision threshold of `0.5`.
 
 #### Precision and Recall
 
-Precision and recall are reported alongside Macro F1 to provide additional information about classification errors. With `FAKE` treated as the positive class:
+Precision and recall are reported separately for both `REAL` and `FAKE` to examine classification performance for each class.
 
-- **Precision** measures how often images predicted as `FAKE` are actually `FAKE`.
-- **Recall** measures how many `FAKE` images are correctly detected.
+- **Precision** measures how often predictions of a given class are correct.
+- **Recall** measures how many images belonging to a given class are correctly identified.
 
 Both metrics are calculated using the fixed `0.5` decision threshold.
 
@@ -222,28 +230,26 @@ ROC AUC evaluates the model's ability to distinguish between `REAL` and `FAKE` u
 Final performance on the isolated CIFAKE test set:
 
 - **Macro F1:** `TBD`
-- **Precision:** `TBD`
-- **Recall:** `TBD`
+- **REAL precision:** `TBD`
+- **REAL recall:** `TBD`
+- **FAKE precision:** `TBD`
+- **FAKE recall:** `TBD`
 - **ROC-AUC:** `TBD`
 
 Training and validation results from model experimentation, together with hyperparameters, learning curves, and relevant artifacts, are tracked and visualized using MLflow.
+
+---
 
 ## Environmental Impact
 
 The environmental impact of model training and experimentation is tracked using CodeCarbon.
 
-- **Hardware type:** NVIDIA GeForce RTX 4050 with 6 GB VRAM
-- **Compute location:** Local
-- **Total training time:** `TBD`
+- **Hardware type:** `TBD`
+- **Compute environment:** Remote
+- **Total compute time:** `TBD`
 - **Energy consumed:** `TBD`
 - **Carbon emitted:** `TBD`
 - **Tracking tool:** CodeCarbon
-
---
-
-## Summary
-
-`TBD`
 
 ## Model Card Authors
 
