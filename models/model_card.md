@@ -52,6 +52,8 @@ This model is a supervised binary image classification component designed to dis
 - **Prediction output:** Binary class (`REAL` / `FAKE`) + probability of the predicted class.
 - **Label encoding:** `REAL = 0`, `FAKE = 1`
 
+#### Final Model Configuration
+
 - **CNN architecture:**
   - **Architecture:** 2×Conv2D(32 filters) + Dense(64)
   - **Kernel size:** `TBD`
@@ -68,10 +70,6 @@ This model is a supervised binary image classification component designed to dis
   - **Dropout:** `TBD`
   - **Epochs:** 20
 
-- **Experiment tracking:** MLflow
-- **Data versioning:** DVC
-- **Emission tracking:** CodeCarbon
-
 - **Developed by:** Maribel Preite, Luis Salinas, Rebeca Torrecilla, Aina Vila
 - **Project:** Advanced Topics in Data Engineering II (TAED2), Universitat Politècnica de Catalunya (UPC)
 - **License:** `TBD`
@@ -83,8 +81,6 @@ This model is a supervised binary image classification component designed to dis
 - **CIFAKE Dataset:** [CIFAKE on Kaggle](https://www.kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images)
 - **Reference baseline:** [CIFAKE Publication](https://ieeexplore.ieee.org/abstract/document/10409290) | [CIFAR-10 Hyperparameter Selection Study](https://researchonline.gcu.ac.uk/ws/portalfiles/portal/26022569/Paper103.pdf)
 - **Demo/Application:** `TBD`
-
---
 
 ## Uses
 
@@ -109,50 +105,18 @@ Potential downstream uses include:
 
 The model is not intended to provide definitive verification of image authenticity or to serve as a state of the art AI generated image detector. Its predictions should not be interpreted as conclusive evidence that an arbitrary image is real or AI generated.
 
---
-
-## Bias, Risks, and Limitations
-
-- **Generator dependency:** CIFAKE synthetic images were generated using [Stable Diffusion v1.4](https://openaccess.thecvf.com/content/CVPR2022/papers/Rombach_High-Resolution_Image_Synthesis_With_Latent_Diffusion_Models_CVPR_2022_paper.pdf). The model may learn artifacts specific to this generator and may not generalize well to images produced by other generative models.
-
-- **Image representation:** The model operates on 32×32 RGB images. Inputs with different resolutions, aspect ratios, or color formats are preprocessed to match this representation, which may result in information loss and affect prediction quality.
-
-- **Limited object diversity:** CIFAKE is derived from the ten CIFAR-10 object/semantic classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Performance may decrease for objects or visual content not represented during training.
-
-- **Split stratification:** The provided CIFAKE split preserves both the `REAL`/`FAKE` distribution and the distribution of the ten CIFAR-10 object classes, with semantic class information encoded in the filenames. For new datasets without a split, the pipeline can preserve target class balance through stratification, while semantic class stratification is only possible when this information is available.
-
-- **Reference reproducibility:** Some implementation and evaluation details of the original CIFAKE experiments are not fully specified, including the construction of the validation set, as well as other parts of the convolutional configuration. Their reported results may not be directly comparable to this implementation. This project uses a separate validation set for model selection and keeps the test set isolated until final evaluation.
-
-- **Limited optimization search:** The final model is selected from a predefined set of experiments based on the CIFAKE publication and related CIFAR-10 research. Since only a limited number of configurations are tested, other architectures or hyperparameters may achieve better performance.
-
-### Recommendations
-
-The model should not be treated as a production ready AI generated image detector without further training and evaluation.
-
-When retraining the model, balanced `REAL` and `FAKE` distributions are strongly suggested. Semantic class labels should also be provided when available, allowing the pipeline to preserve semantic class distributions across generated splits. A balanced representation of semantic classes is also recommended. If semantic class information is unavailable, the training data should instead contain a wide variety of objects and visual content to improve generalization to unseen content.
-
-If pre-existing splits are provided, they should follow good practices to prevent data leakage. The pipeline will check for duplicate image content across splits and report potential inconsistencies before training.
-
-Before production use, the model should be evaluated beyond the training distribution. This should include unseen object types, images from different real world sources and generative models, and common transformations such as cropping, rotation, resizing, and compression.
-
---
-
 ## Training Details
 
 ### Training Data
 
-Dataset: **CIFAKE: Real and AI-Generated Synthetic Images**
-
-The official CIFAKE training set contains 100,000 images, consisting of 50,000 `REAL` and 50,000 `FAKE` images.
+The model is trained using the official CIFAKE training set containing 100,000 images. This set is further divided into fixed training and validation subsets:
 
 - **Training subset:** 80,000 images (80%), consisting of 40,000 `REAL` and 40,000 `FAKE` images.
 - **Validation subset:** 20,000 images (20%), consisting of 10,000 `REAL` and 10,000 `FAKE` images.
-- **Image representation:** 32×32 RGB images.
-- **Semantic classes:** Ten CIFAR-10 categories, uniformly represented within both `REAL` and `FAKE`.
 
-The training and validation subsets preserve both the target and semantic class distributions of the original training set. A fixed split is used across experiments to ensure consistent model comparison.
+The split preserves both the target and semantic class distributions of the original training set and remains fixed across experiments to ensure consistent model comparison.
 
-For further details, see the [Dataset Card](../data/dataset_card.md).
+For details about CIFAKE's composition, provenance, semantic classes, and original splits, see the [Dataset Card](../data/dataset_card.md).
 
 #### Preprocessing
 
@@ -172,7 +136,9 @@ CIFAKE already provides valid and balanced train/test splits with uniform semant
 
 ### Training Configuration
 
-- **Model:** CNN with 2×Conv2D(32 filters) + Dense(64).
+Some parameters remain fixed based on the architectures investigated by [Bird & Lotfi (2024)](https://ieeexplore.ieee.org/abstract/document/10409290) and the findings by [Nazir, Patel & Patel (2018)](https://researchonline.gcu.ac.uk/ws/portalfiles/portal/26022569/Paper103.pdf) on hyperparameter tuning for a computer vision model trained on [CIFAR-10](https://cave.cs.toronto.edu/kriz/cifar.html).
+
+- **Base architecture:** CNN with 2×Conv2D(32 filters) + Dense(64).
 - **Input:** 32×32 RGB images with pixel values normalized to `[0, 1]`.
 - **Loss function:** Binary cross entropy.
 - **Optimizer:** Adam.
@@ -180,36 +146,63 @@ CIFAKE already provides valid and balanced train/test splits with uniform semant
 - **Model selection:** Macro F1 and ROC-AUC on the validation set are used to compare model configurations during experimentation.
 - **Tracking:** MLflow for experiment tracking and CodeCarbon for emission tracking.
 
-#### Experimental Hyperparameters
+#### Phase 1: Architecture Selection
+
+The first phase compares a predefined set of CNN configurations based on the architecture investigated by Bird & Lotfi (2024). The objective is to select the model architecture before further optimization of the training configuration.
+
+Candidate configurations include variations in:
 
 - **Kernel size:** `[3×3, 5×5]`
 - **Padding:** `['valid', 'same']`
 - **Pooling:** `['max', 'average']`, with 2×2 pooling size
+
+Training hyperparameters remain fixed during Phase 1:
+
+- **Learning rate:** `10⁻³`
+- **Batch size:** `32`
+- **Dropout:** `0`
+
+The initial learning rate and batch size are informed by the results reported by [Nazir, Patel & Patel (2018)](https://researchonline.gcu.ac.uk/ws/portalfiles/portal/26022569/Paper103.pdf). Dropout is initially disabled because the baseline architecture is substantially simpler than the six-convolutional-layer architecture evaluated in their study. Regularization through dropout is therefore introduced and evaluated in Phase 2 only if overfitting is observed during Phase 1.
+
+#### Phase 2: Hyperparameter Tuning
+
+After selecting an architecture, the second phase evaluates training hyperparameters while keeping the selected model architecture fixed.
+
+The experimental search includes:
 - **Learning rate:** `[10⁻², 10⁻³, 10⁻⁴]`
 - **Batch size:** `[32, 64, 128]`
-- **Dropout:** `[0, 0.125, 0.25]`, evaluated only if overfitting is observed
-
----
+- **Dropout:** `[0, 0.125, 0.25]`, evaluated if overfitting is observed during Phase 1
 
 ## Evaluation
 
-### Testing Data
+### Evaluation data
 
-Dataset: **CIFAKE (official test split)**
+#### CIFAKE Test Set
 
-- **Testing set:** 20,000 images, consisting of 10,000 `REAL` and 10,000 `FAKE` images.
-- **Image representation:** 32×32 RGB images.
-- **Semantic classes:** Ten CIFAR-10 categories, uniformly represented within both `REAL` and `FAKE`, with 1,000 images per category.
+Final model performance is evaluated on the official CIFAKE test split, which remains isolated during model development.
 
-For further details, see the [Dataset Card](../data/dataset_card.md).
+The test set contains 20,000 images:
+- **`REAL`:** 10,000 images
+- **`FAKE`:** 10,000 images
+
+The ten CIFAR-10 semantic categories are uniformly represented within both classes, with 1,000 images per semantic category.
+
+For further details about the dataset and its predefined splits, see the [Dataset Card](../data/dataset_card.md).
+
+#### External Evaluation
+
+Additional external datasets may be used exclusively to evaluate model generalization beyond the CIFAKE distribution. These data are not used for training, validation, architecture selection, or hyperparameter tuning.
+
+External evaluation may include images that differ from CIFAKE in terms of semantic content, original resolution, real image source, or generative model. 
 
 ### Factors
 
-Final model performance will be evaluated across the following factors:
+Model performance is evaluated across the following factors:
 
-- **Semantic class:** Compare performance across the ten CIFAKE semantic classes using the official test set.
-- **External images:** Evaluate images from sources outside CIFAKE to assess performance beyond the training distribution.
-- **Input preprocessing:** Evaluate external images with different original dimensions and aspect ratios to assess the effect of cropping and resizing to the required 32×32 input representation.
+- **Semantic class:** Compare performance across the ten CIFAKE semantic classes.
+- **Generative model:** Compare performance on synthetic images produced by generators not represented during training, when suitable external evaluation data are available.
+- **Semantic domain:** Evaluate performance on visual content outside the ten CIFAKE semantic categories, when suitable external evaluation data are available.
+- **Input preprocessing:** Evaluate external images with different original dimensions and aspect ratios to assess the effect of preprocessing to 32×32.
 
 ### Metrics
 
@@ -234,6 +227,8 @@ ROC AUC evaluates the model's ability to distinguish between `REAL` and `FAKE` u
 
 ### Results
 
+#### CIFAKE Test Results
+
 Final performance on the isolated CIFAKE test set:
 
 - **Macro F1:** `TBD`
@@ -245,14 +240,42 @@ Final performance on the isolated CIFAKE test set:
 
 Training and validation results from model experimentation, together with hyperparameters, learning curves, and relevant artifacts, are tracked and visualized using MLflow.
 
----
+#### External Evaluation Results
+
+Results from external evaluation datasets will be reported here if additional datasets are used to assess model generalization beyond the CIFAKE distribution.
+
+## Bias, Risks, and Limitations
+
+- **Generator dependency:** CIFAKE synthetic images were generated using [Stable Diffusion v1.4](https://openaccess.thecvf.com/content/CVPR2022/papers/Rombach_High-Resolution_Image_Synthesis_With_Latent_Diffusion_Models_CVPR_2022_paper.pdf). The model may learn artifacts specific to this generator and may not generalize well to images produced by other generative models.
+
+- **Limited semantic diversity:** CIFAKE is derived from the ten CIFAR-10 object/semantic classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Performance may decrease for objects or visual content not represented during training.
+
+- **Image representation:** The model operates on 32×32 RGB images. Inputs with different resolutions, aspect ratios, or color formats are preprocessed to match this representation, which may result in information loss and affect prediction quality.
+
+- **Semantic distribution across generated splits:** When semantic class information is available, the pipeline can preserve both target and semantic class distributions when generating data splits. If semantic class information is unavailable, stratification can only be performed on the target (`REAL` / `FAKE`). As a result, semantic content may be unevenly distributed across training, validation, and test subsets, which could affect model performance.
+
+- **Limited optimization search:** The final model is selected from a predefined set of experiments based on the CIFAKE publication and related CIFAR-10 research. Since only a limited number of configurations are tested, other architectures or hyperparameters may achieve better performance.
+
+- **Reference reproducibility:** Some implementation and evaluation details of the original CIFAKE experiments are not fully specified, including the construction of the validation set, as well as other parts of the convolutional configuration. Their reported results may not be directly comparable to this implementation. This project uses a separate validation set for model selection and keeps the test set isolated until final evaluation.
+
+### Recommendations
+
+The model should not be treated as a production ready AI generated image detector without further training and evaluation.
+
+When training on new data, users should review the dataset validation results before proceeding. The pipeline performs checks for issues such as invalid labels, duplicate image content, data leakage across splits, and class distributions. However, automated validation cannot guarantee that all issues will be detected.
+
+Datasets with substantial `REAL` / `FAKE` class imbalance should be handled  before training. Depending on the dataset and intended application, appropriate strategies may include undersampling or oversampling. The pipeline reports class distributions rather than silently rebalancing the data.
+
+When semantic class information is available, it should be provided so that generated splits can preserve both target and semantic distributions. Without semantic labels, stratification can only preserve the `REAL` / `FAKE` distribution, and semantic content may remain unevenly distributed across splits and affect model performance.
+
+Before broader use, the model should be evaluated beyond the CIFAKE distribution, including images from different generative models and semantic domains, as well as images with different original resolutions and aspect ratios.
 
 ## Environmental Impact
 
 The environmental impact of model training and experimentation is tracked using CodeCarbon.
 
-- **Hardware type:** `TBD`
-- **Compute environment:** Remote
+- **Training hardware:** `TBD`
+- **Compute environment:** `TBD`
 - **Total compute time:** `TBD`
 - **Energy consumed:** `TBD`
 - **Carbon emitted:** `TBD`
