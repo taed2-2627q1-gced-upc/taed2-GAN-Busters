@@ -96,11 +96,18 @@ The model is integrated into an end-to-end MLOps pipeline, developed primarily f
 
 ### Downstream Use
 
-The model and pipeline may be reused and extended for further experimentation or development, with appropriate attribution to the original repository and implementation. Potential downstream uses include fine tuning or improving the model with additional data, reusing the pipeline with alternative model configurations, or integrating the model and pipeline into a larger application.
+The model and pipeline may be reused and extended for further experimentation or development, with appropriate attribution to the original repository and implementation.
+
+Potential downstream uses include:
+
+- fine-tuning or retraining the model with additional or more diverse data
+- experimenting with alternative model architectures or configurations
+- extending or adapting the existing MLOps pipeline
+- integrating the trained model into a larger application 
 
 ### Out-of-Scope Use
 
-The model is not intended to provide definitive verification of image authenticity or to serve as a state of the art AI generated image detector.
+The model is not intended to provide definitive verification of image authenticity or to serve as a state of the art AI generated image detector. Its predictions should not be interpreted as conclusive evidence that an arbitrary image is real or AI generated.
 
 --
 
@@ -252,5 +259,7 @@ The environmental impact of model training and experimentation is tracked using 
 - **Tracking tool:** CodeCarbon
 
 ## Model Card Authors
-
-Maribel Preite, Luis Salinas, Rebeca Torrecilla, Aina Vila
+- Maribel Yazmin Preite: mayp@itu.dk ; maribel.yazmin.preite@estudiantat.upc.edu
+- Luis Antonio Salinas: luis.antonio.salinas@estudiantat.upc.edu
+- Rebeca Torrecilla: rebeca.torrecilla@estudiantat.upc.edu
+- Aina Vila: aina.vila.arbusa@estudiantat.upc.edu
