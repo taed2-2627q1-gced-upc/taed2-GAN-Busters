@@ -8,6 +8,16 @@ Supervised binary image classification component for distinguishing between real
 
 ---
 
+## Project Documentation
+
+Additional project documentation can be found in:
+
+- [`data/dataset_card.md`](data/dataset_card.md) — dataset description, provenance, preprocessing, and limitations
+- [`models/model_card.md`](models/model_card.md) — model architecture, evaluation, intended use, and limitations
+- [`references/README.md`](references/README.md) — datasets, literature, standards, and related work
+
+---
+
 ## Environment Setup
 
 This project uses **Python 3.10.x** and a **pip-based virtual environment** named `gan-busters`.
@@ -199,13 +209,3 @@ template and has been adapted to the needs of this project.
     │
     └── plots.py             <- Visualization utilities
 ```
-
----
-
-## Project Documentation
-
-Additional project documentation can be found in:
-
-- [`data/dataset_card.md`](data/dataset_card.md) — dataset description, provenance, preprocessing, and limitations
-- [`models/model_card.md`](models/model_card.md) — model architecture, evaluation, intended use, and limitations
-- [`references/README.md`](references/README.md) — datasets, literature, standards, and related work
