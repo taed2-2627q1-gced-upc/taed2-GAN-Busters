@@ -4,37 +4,70 @@
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
 
-Supervised binary image classification component for distinguishing between real and AI generated images.
+Supervised binary image classification component for distinguishing between real and AI-generated images.
 
---
+---
 
 ## Environment Setup
 
-This project uses **Python 3.10.x** and a **pip-based virtual environment**. 
+This project uses **Python 3.10.x** and a **pip-based virtual environment** named `gan-busters`.
 
-### Prerequisites
+### Activate an existing environment
 
-Python **3.10.x** must be installed on the system before creating the virtual environment. The virtual environment is created from an existing Python 3.10 interpreter.
+If the environment has already been created, activate it before running the project.
 
-Verify that Python 3.10 is available:
-
-```bash
-# Linux/macOS/WSL
-python3.10 --version
-```
+#### Windows PowerShell
 
 ```powershell
-# Windows PowerShell, if the Python Launcher is installed
-py -3.10 --version
+& "$HOME\.virtualenvs\gan-busters\Scripts\Activate.ps1"
 ```
 
-The command should report:
+#### Linux/macOS/WSL
+
+```bash
+source ~/.virtualenvs/gan-busters/bin/activate
+```
+
+#### If created with `virtualenvwrapper`
+
+```bash
+workon gan-busters
+```
+
+Verify that the correct Python version is active:
+
+```bash
+python --version
+```
+
+The output should report:
 
 ```text
 Python 3.10.x
 ```
 
-If Python 3.10 is not available, ([install it](https://www.python.org/downloads/release/python-31011/)) before proceeding.
+---
+
+### First-time setup
+
+Python **3.10.x** must be installed before creating the virtual environment.
+
+Verify that Python 3.10 is available:
+
+#### Linux/macOS/WSL
+
+```bash
+python3.10 --version
+```
+
+#### Windows PowerShell
+
+```powershell
+py -3.10 --version
+```
+
+If Python 3.10 is not installed, it can be downloaded from the
+[official Python releases page](https://www.python.org/downloads/release/python-31011/).
 
 ### Option 1 — Makefile
 
@@ -44,35 +77,37 @@ This requires:
 
 - GNU Make
 - `virtualenvwrapper`
-- A Python 3.10 interpreter available to the Makefile
+- Python 3.10 available to the Makefile
 
-For example, GNU Make can be installed on Ubuntu/WSL with:
-
-```bash
-sudo apt install make
-```
-
-Then create and activate the environment and install the project dependencies:
+Create the environment:
 
 ```bash
 make create_environment
+```
+
+Activate it:
+
+```bash
 workon gan-busters
+```
+
+Install the project dependencies:
+
+```bash
 make requirements
 ```
 
-After creating the environment, verify that the correct Python version is being used:
+Verify the Python version:
 
 ```bash
 python --version
 ```
 
-The output must report `Python 3.10.x` before installing or running the project dependencies.
-
-> **Important:** The Makefile must resolve `PYTHON_INTERPRETER` to a Python 3.10 interpreter. If another Python version is used, the generated environment will not satisfy the project's Python requirement.
+> The Makefile must resolve `PYTHON_INTERPRETER` to a Python 3.10 interpreter.
 
 ### Option 2 — Python `venv`
 
-The environment can alternatively be created directly from a Python 3.10 interpreter.
+The environment can also be created directly using Python 3.10.
 
 #### Linux/macOS/WSL
 
@@ -84,105 +119,93 @@ source ~/.virtualenvs/gan-busters/bin/activate
 
 #### Windows PowerShell
 
-Create the directory used to store virtual environments:
+Create the virtual-environment directory:
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$HOME\.virtualenvs"
 ```
 
-If the Windows Python Launcher is installed:
+Create the environment:
 
 ```powershell
 py -3.10 -m venv "$HOME\.virtualenvs\gan-busters"
 ```
 
-Otherwise, use the path to the installed Python 3.10 executable:
-
-```powershell
-& "<path-to-python-3.10>\python.exe" -m venv "$HOME\.virtualenvs\gan-busters"
-```
-
-Activate the environment:
+Activate it:
 
 ```powershell
 & "$HOME\.virtualenvs\gan-busters\Scripts\Activate.ps1"
 ```
 
-### Verify the Environment
+### Install dependencies
 
-After activation, verify that the environment is using the required Python version:
-
-```bash
-python --version
-```
-
-The output must report:
-
-```text
-Python 3.10.x
-```
-
-Then install the project dependencies:
+Once the environment is active:
 
 ```bash
-python -m pip install -U pip
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
---
+---
 
 ## Project Organization
 
-```
-├── LICENSE            <- Open-source license if one is chosen
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
-├── README.md          <- The top-level README for developers using this project.
+The project structure is based on the
+[Cookiecutter Data Science](https://cookiecutter-data-science.drivendata.org/)
+template and has been adapted to the needs of this project.
+
+```text
+├── LICENSE
+├── Makefile
+├── README.md
+│
 ├── data
-│   ├── dataset_card.md<- Data from third party sources.
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
+│   ├── dataset_card.md      <- Dataset documentation, provenance, limitations, and usage
+│   ├── external             <- Data from external sources
+│   ├── interim              <- Intermediate transformed data
+│   ├── processed            <- Final data prepared for modeling
+│   └── raw                  <- Original immutable data
 │
-├── docs               <- A default mkdocs project; see www.mkdocs.org for details
+├── docs                     <- Project documentation
 │
-├── models             <- Trained and serialized models, model predictions, or model summaries
-│   └── model_card.md  <- The original, immutable data dump.
+├── models
+│   └── model_card.md        <- Model architecture, intended use, evaluation, and limitations
 │
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
+├── notebooks                <- Jupyter notebooks for exploration and experimentation
 │
-├── pyproject.toml     <- Project configuration file with package metadata for 
-│                         gan_busters and configuration for tools like black
+├── pyproject.toml           <- Project and tool configuration
 │
-├── references         <- Data dictionaries, manuals, and all other explanatory materials.
+├── references
+│   ├── README.md            <- Centralized list of datasets, papers, standards, and related work
+│   └── figures              <- Figures used in project documentation
 │
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
+├── reports                  <- Generated reports and analysis outputs
+│   └── figures              <- Figures produced specifically for reporting
 │
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
+├── requirements.txt         <- Python dependencies required to reproduce the environment
 │
-├── setup.cfg          <- Configuration file for flake8
+├── setup.cfg                <- Additional project/tool configuration
 │
-└── gan_busters   <- Source code for use in this project.
+└── gan_busters              <- Project source code
+    ├── __init__.py
+    ├── config.py            <- Shared configuration
+    ├── dataset.py           <- Data loading and processing
+    ├── features.py          <- Feature and preprocessing logic
     │
-    ├── __init__.py             <- Makes gan_busters a Python module
+    ├── modeling
+    │   ├── __init__.py
+    │   ├── predict.py       <- Model inference
+    │   └── train.py         <- Model training
     │
-    ├── config.py               <- Store useful variables and configuration
-    │
-    ├── dataset.py              <- Scripts to download or generate data
-    │
-    ├── features.py             <- Code to create features for modeling
-    │
-    ├── modeling                
-    │   ├── __init__.py 
-    │   ├── predict.py          <- Code to run model inference with trained models          
-    │   └── train.py            <- Code to train models
-    │
-    └── plots.py                <- Code to create visualizations
+    └── plots.py             <- Visualization utilities
 ```
 
---------
+---
 
+## Project Documentation
+
+Additional project documentation can be found in:
+
+- [`data/dataset_card.md`](data/dataset_card.md) — dataset description, provenance, preprocessing, and limitations
+- [`models/model_card.md`](models/model_card.md) — model architecture, evaluation, intended use, and limitations
+- [`references/README.md`](references/README.md) — datasets, literature, standards, and related work
