@@ -198,14 +198,18 @@ template and has been adapted to the needs of this project.
 │
 └── gan_busters              <- Project source code
     ├── __init__.py
-    ├── config.py            <- Shared configuration
-    ├── dataset.py           <- Data loading and processing
-    ├── features.py          <- Feature and preprocessing logic
+    ├── config.py            <- Shared paths, defaults, and project configuration
+    ├── dataset.py           <- Data loading, validation, and splitting
+    ├── features.py          <- Image preprocessing logic
+    ├── main.py              <- Central CLI entry point and execution routing
+    ├── plots.py             <- Visualization utilities
     │
-    ├── modeling
-    │   ├── __init__.py
-    │   ├── predict.py       <- Model inference
-    │   └── train.py         <- Model training
-    │
-    └── plots.py             <- Visualization utilities
+    └── modeling
+        ├── __init__.py
+        ├── architecture.py  <- CNN architecture construction
+        ├── experiment.py    <- Training and validation for model selection
+        ├── train.py         <- Final model training and model saving
+        ├── evaluate.py      <- Evaluation on labelled test datasets
+        ├── predict.py       <- Model inference on new images
+        └── tracking.py      <- MLflow and DagsHub experiment tracking utilities
 ```

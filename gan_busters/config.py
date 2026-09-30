@@ -1,5 +1,4 @@
 from pathlib import Path
-
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -20,6 +19,41 @@ MODELS_DIR = PROJ_ROOT / "models"
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
+
+
+# Reproducibility
+RANDOM_SEED = 1
+
+# Input
+INPUT_SHAPE = (32, 32, 3)
+NORMALIZE_PIXELS = True
+
+# Base architecture
+DEFAULT_CONV_FILTERS = (32, 32)
+DEFAULT_DENSE_UNITS = (64,)
+DEFAULT_KERNEL_SIZE = 3
+DEFAULT_PADDING = "same"
+DEFAULT_POOLING = "max"
+DEFAULT_POOL_SIZE = (2, 2)
+
+# Default training configuration
+DEFAULT_LOSS = "binary_crossentropy"
+DEFAULT_OPTIMIZER = "adam"
+DEFAULT_EPOCHS = 20
+DEFAULT_LEARNING_RATE = 1e-3
+DEFAULT_BATCH_SIZE = 32
+DEFAULT_DROPOUT = 0.0
+
+# Phase 1 search space
+PHASE1_KERNEL_SIZES = (3, 5)
+PHASE1_PADDING = ("valid", "same")
+PHASE1_POOLING = ("max", "average")
+
+# Phase 2 search space
+PHASE2_LEARNING_RATES = (1e-2, 1e-3, 1e-4)
+PHASE2_BATCH_SIZES = (32, 64, 128)
+PHASE2_DROPOUT = (0.0, 0.125, 0.25)
+
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135
