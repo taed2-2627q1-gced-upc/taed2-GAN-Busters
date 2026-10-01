@@ -192,4 +192,3 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-/dagshub_test.txt
