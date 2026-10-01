@@ -1,0 +1,5 @@
+outs:
+- md5: 44ab97fe5053e8e2c4bc5a94f8c3ac8e
+  size: 58
+  hash: md5
+  path: dagshub_test.txt
