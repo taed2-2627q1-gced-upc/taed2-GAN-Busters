@@ -1,6 +1,0 @@
-outs:
-- md5: 368eb180912a1a0a8a728661e983a66a.dir
-  size: 110717853
-  nfiles: 120000
-  hash: md5
-  path: cifake
