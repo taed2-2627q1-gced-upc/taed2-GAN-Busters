@@ -139,10 +139,13 @@ CIFAKE already provides valid and balanced train/test splits with uniform semant
 Some parameters remain fixed based on the architectures investigated by [Bird & Lotfi (2024)](https://ieeexplore.ieee.org/abstract/document/10409290) and the findings by [Nazir, Patel & Patel (2018)](https://researchonline.gcu.ac.uk/ws/portalfiles/portal/26022569/Paper103.pdf) on hyperparameter tuning for a computer vision model trained on [CIFAR-10](https://cave.cs.toronto.edu/kriz/cifar.html).
 
 - **Base architecture:** CNN with 2×Conv2D(32 filters) + Dense(64).
+- **Stride:** `1`.
+- **Pooling window size:** `2x2`.
 - **Input:** 32×32 RGB images with pixel values normalized to `[0, 1]`.
+- **Activation function:** ReLU.
 - **Loss function:** Binary cross entropy.
 - **Optimizer:** Adam.
-- **Epochs:** 20.
+- **Epochs:** `20`.
 - **Model selection:** Macro F1 and ROC-AUC on the validation set are used to compare model configurations during experimentation.
 - **Tracking:** MLflow for experiment tracking and CodeCarbon for emission tracking.
 
