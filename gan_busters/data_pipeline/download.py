@@ -7,7 +7,7 @@ DATASET_SLUG = "birdy654/cifake-real-and-ai-generated-synthetic-images/versions/
 
 
 def main():
-    output_dir = RAW_DATA_DIR / "cifake"
+    output_dir = RAW_DATA_DIR
 
     logger.info(f"Downloading '{DATASET_SLUG}' from Kaggle...")
 
