@@ -18,13 +18,9 @@ Additional project documentation can be found in:
 
 ---
 
-## Environment Setup
+## Daily Workflow
 
-This project uses **Python 3.10.x** and a **pip-based virtual environment** named `gan-busters`.
-
-### Activate an existing environment
-
-If the environment has already been created, activate it before running the project.
+### 1. Activate the environment
 
 #### Windows PowerShell
 
@@ -38,27 +34,77 @@ If the environment has already been created, activate it before running the proj
 source ~/.virtualenvs/gan-busters/bin/activate
 ```
 
-#### If created with `virtualenvwrapper`
+If the environment was created with `virtualenvwrapper`:
 
 ```bash
 workon gan-busters
 ```
 
-Verify that the correct Python version is active:
+### 2. Get the latest project version
+
+Pull the latest Git changes first:
 
 ```bash
-python --version
+git pull origin dev
 ```
 
-The output should report:
+Then retrieve the DVC-managed data corresponding to the current project version:
 
-```text
-Python 3.10.x
+```bash
+python -m dvc pull
 ```
+
+`data/interim/` and `data/processed/` are versioned through DVC. The original
+images in `data/raw/` are downloaded from Kaggle and are not stored in the DVC
+remote.
+
+If `data/raw/` is not available locally:
+
+```bash
+python -m gan_busters.data_pipeline.download
+```
+
+### 3. Reproduce data pipeline changes
+
+If code or dependencies affecting the data pipeline have changed:
+
+```bash
+python -m dvc repro
+```
+
+Verify the pipeline state with:
+
+```bash
+python -m dvc status
+```
+
+### 4. Publish changes
+
+If `data/interim/` or `data/processed/` changed after reproducing the pipeline,
+push the new DVC artifacts:
+
+```bash
+python -m dvc push
+```
+
+Then commit and push the corresponding code and DVC metadata:
+
+```bash
+git add .
+git commit -m "commit_title" -m "commit_description"
+git push
+```
+
+`dvc push` is only required when DVC-managed artifacts have changed.
 
 ---
 
-### First-time setup
+## First-Time Setup
+
+This project uses **Python 3.10.x** and a **pip-based virtual environment**
+named `gan-busters`.
+
+### 1. Environment setup
 
 Python **3.10.x** must be installed before creating the virtual environment.
 
@@ -79,9 +125,10 @@ py -3.10 --version
 If Python 3.10 is not installed, it can be downloaded from the
 [official Python releases page](https://www.python.org/downloads/release/python-31011/).
 
-### Option 1 — Makefile
+#### Option 1 — Makefile
 
-On Linux/macOS, WSL, or Git Bash, the environment can be created using the provided Makefile.
+On Linux/macOS, WSL, or Git Bash, the environment can be created using the
+provided Makefile.
 
 This requires:
 
@@ -89,15 +136,10 @@ This requires:
 - `virtualenvwrapper`
 - Python 3.10 available to the Makefile
 
-Create the environment:
+Create and activate the environment:
 
 ```bash
 make create_environment
-```
-
-Activate it:
-
-```bash
 workon gan-busters
 ```
 
@@ -107,19 +149,11 @@ Install the project dependencies:
 make requirements
 ```
 
-Verify the Python version:
-
-```bash
-python --version
-```
-
 > The Makefile must resolve `PYTHON_INTERPRETER` to a Python 3.10 interpreter.
 
-### Option 2 — Python `venv`
+#### Option 2 — Python `venv`
 
-The environment can also be created directly using Python 3.10.
-
-#### Linux/macOS/WSL
+##### Linux/macOS/WSL
 
 ```bash
 mkdir -p ~/.virtualenvs
@@ -127,34 +161,77 @@ python3.10 -m venv ~/.virtualenvs/gan-busters
 source ~/.virtualenvs/gan-busters/bin/activate
 ```
 
-#### Windows PowerShell
-
-Create the virtual-environment directory:
+##### Windows PowerShell
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$HOME\.virtualenvs"
-```
-
-Create the environment:
-
-```powershell
 py -3.10 -m venv "$HOME\.virtualenvs\gan-busters"
-```
-
-Activate it:
-
-```powershell
 & "$HOME\.virtualenvs\gan-busters\Scripts\Activate.ps1"
 ```
 
-### Install dependencies
-
-Once the environment is active:
+Install the dependencies:
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
+
+Verify the environment:
+
+```bash
+python --version
+```
+
+The output should report:
+
+```text
+Python 3.10.x
+```
+
+### 2. DVC and data setup
+
+Once the environment and dependencies are installed, choose one of the
+following approaches.
+
+#### Use the existing validated dataset
+
+Recommended when the goal is model development:
+
+```bash
+python -m dvc pull
+python -m gan_busters.data_pipeline.download
+```
+
+This retrieves the versioned records in `data/interim/` and `data/processed/`
+from the DVC remote and downloads the original CIFAKE images into `data/raw/`.
+
+#### Reproduce the complete data pipeline
+
+To regenerate all derived data from the original CIFAKE source:
+
+```bash
+python -m dvc repro
+```
+
+DVC executes the complete pipeline defined in `dvc.yaml`:
+
+```text
+download_data
+      ↓
+   data/raw
+      ↓
+ inspect_data
+      ↓
+ data/interim
+      ↓
+data_integrity
+      ↓
+data/processed
+```
+
+The resulting `data/interim/` and `data/processed/` outputs are managed and
+versioned by DVC. `data/raw/` participates in the pipeline but is not stored in
+the DVC remote.
 
 ---
 
@@ -168,48 +245,54 @@ template and has been adapted to the needs of this project.
 ├── LICENSE
 ├── Makefile
 ├── README.md
+├── dvc.yaml                  <- DVC pipeline definition
+├── dvc.lock                  <- Versioned pipeline dependencies and outputs
 │
 ├── data
-│   ├── dataset_card.md      <- Dataset documentation, provenance, limitations, and usage
-│   ├── external             <- Data from external sources
-│   ├── interim              <- Intermediate transformed data
-│   ├── processed            <- Final data prepared for modeling
-│   └── raw                  <- Original immutable data
+│   ├── dataset_card.md       <- Dataset documentation, provenance, limitations, and usage
+│   ├── external              <- External datasets used for evaluation
+│   ├── interim               <- DVC-managed file inspection results
+│   ├── processed             <- DVC-managed validated dataset records
+│   └── raw                   <- Original CIFAKE data downloaded from source
 │
-├── docs                     <- Project documentation
+├── docs                      <- Project documentation
 │
 ├── models
-│   └── model_card.md        <- Model architecture, intended use, evaluation, and limitations
+│   └── model_card.md         <- Model architecture, intended use, evaluation, and limitations
 │
-├── notebooks                <- Jupyter notebooks for exploration and experimentation
+├── notebooks                 <- Exploration, validation, and experimentation notebooks
 │
-├── pyproject.toml           <- Project and tool configuration
+├── pyproject.toml            <- Project and tool configuration
 │
 ├── references
-│   ├── README.md            <- Centralized list of datasets, papers, standards, and related work
-│   └── figures              <- Figures used in project documentation
+│   ├── README.md             <- Centralized datasets, papers, standards, and related work
+│   └── figures               <- Figures used in project documentation
 │
-├── reports                  <- Generated reports and analysis outputs
-│   └── figures              <- Figures produced specifically for reporting
+├── reports
+│   ├── figures               <- Generated report figures
+│   └── tables                <- Generated report tables
 │
-├── requirements.txt         <- Python dependencies required to reproduce the environment
+├── requirements.txt          <- Python dependencies required to reproduce the environment
+├── setup.cfg                 <- Additional project/tool configuration
 │
-├── setup.cfg                <- Additional project/tool configuration
-│
-└── gan_busters              <- Project source code
+└── gan_busters               <- Project source code
     ├── __init__.py
-    ├── config.py            <- Shared paths, defaults, and project configuration
-    ├── dataset.py           <- Data loading, validation, and splitting
-    ├── features.py          <- Image preprocessing logic
-    ├── main.py              <- Central CLI entry point and execution routing
-    ├── plots.py             <- Visualization utilities
+    ├── config.py             <- Shared paths, defaults, and project configuration
+    ├── main.py               <- Central CLI entry point and execution routing
+    ├── plots.py              <- Visualization utilities
+    │
+    ├── data_pipeline
+    │   ├── __init__.py
+    │   ├── download.py       <- Download the original CIFAKE dataset
+    │   ├── inspect.py        <- File-level inspection and metadata extraction
+    │   └── data_integrity.py <- Duplicate handling, leakage prevention, and dataset splitting
     │
     └── modeling
         ├── __init__.py
-        ├── architecture.py  <- CNN architecture construction
-        ├── experiment.py    <- Training and validation for model selection
-        ├── train.py         <- Final model training and model saving
-        ├── evaluate.py      <- Evaluation on labelled test datasets
-        ├── predict.py       <- Model inference on new images
-        └── tracking.py      <- MLflow and DagsHub experiment tracking utilities
+        ├── architecture.py   <- CNN architecture construction
+        ├── experiment.py     <- Training and validation for model selection
+        ├── train.py          <- Final model training and model saving
+        ├── evaluate.py       <- Evaluation on labelled test datasets
+        ├── predict.py        <- Model inference on new images
+        └── tracking.py       <- MLflow and DagsHub experiment tracking utilities
 ```
