@@ -19,10 +19,24 @@ MODELS_DIR = PROJ_ROOT / "models"
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
-
+TABLES_DIR = REPORTS_DIR / "tables"
 
 # Reproducibility
 RANDOM_SEED = 1
+
+# Dataset
+CIFAR10_CLASSES = {
+    1: "airplane",
+    2: "automobile",
+    3: "bird",
+    4: "cat",
+    5: "deer",
+    6: "dog",
+    7: "frog",
+    8: "horse",
+    9: "ship",
+    10: "truck",
+}
 
 # Input
 INPUT_SHAPE = (32, 32, 3)

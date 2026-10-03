@@ -1,21 +1,26 @@
 stages:
   download_data:
-    cmd: py -m gan_busters.dataset
-    outs:
-      - data/raw/cifake
-
-  corrupt_data:
-    cmd: py -m gan_busters.corrupt_data
+    cmd: python -m gan_busters.data_pipeline.download
     deps:
-      - data/raw/cifake
-      - gan_busters/corrupt_data.py
+      - gan_busters/data_pipeline/download.py
     outs:
-      - data/interim/cifake_corrupted
+      - data/raw:
+          cache: false
 
-  build_features:
-    cmd: py -m gan_busters.features
+  inspect_data:
+    cmd: python -m gan_busters.data_pipeline.inspect
     deps:
-      - data/interim/cifake_corrupted
-      - gan_busters/features.py
+      - data/raw
+      - gan_busters/data_pipeline/inspect.py
+      - gan_busters/config.py
     outs:
-      - data/processed/cifake_clean
+      - data/interim
+
+  data_integrity:
+    cmd: python -m gan_busters.data_pipeline.data_integrity
+    deps:
+      - data/interim/inspected_records.csv
+      - gan_busters/data_pipeline/data_integrity.py
+      - gan_busters/config.py
+    outs:
+      - data/processed

@@ -13,10 +13,12 @@ typer
 # codecarbon==3.3.1
 
 dvc==3.67.1
-dvc-gdrive==3.0.1
-PyDrive2==1.21.3
-pyOpenSSL==24.2.1
-cryptography==43.0.3
-asyncssh==2.23.1
+dvc-s3==3.3.0
+kagglehub==1.0.2
+loguru==0.7.3
+typer==0.27.2
+pillow==12.3.0
+pandas==2.3.3
+scikit-learn==1.7.2
 
 -e .
