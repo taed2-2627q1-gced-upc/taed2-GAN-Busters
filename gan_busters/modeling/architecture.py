@@ -1,63 +1,118 @@
-import tensorflow as tf
-from tensorflow.keras import layers, models  # type: ignore[import-untyped]
+"""
+CNN architecture construction for GAN-Busters.
 
-from gan_busters import config
+This module builds the complete TensorFlow/Keras classification model,
+including input preprocessing and the CNN architecture.
+
+All model configuration is provided by the experiment runner. This module
+does not define experiment defaults or training configuration.
+"""
+
+from tensorflow import keras
+from tensorflow.keras import layers
+
 from gan_busters.modeling.preprocessing import ChannelStandardization
 
 
 def build_model(
-    conv_filters=config.DEFAULT_CONV_FILTERS,
-    kernel_size=config.DEFAULT_KERNEL_SIZE,
-    padding=config.DEFAULT_PADDING,
-    pooling=config.DEFAULT_POOLING,
-    pool_size=config.DEFAULT_POOL_SIZE,
-    dense_units=config.DEFAULT_DENSE_UNITS,
-    dropout=config.DEFAULT_DROPOUT,
-    learning_rate=config.DEFAULT_LEARNING_RATE
-) -> tf.keras.Model:
-    """
-    Constructs a fresh Keras Model packaging the preprocessing layers
-    together with the CNN architecture.
-    """
-    pool_layer = layers.MaxPooling2D if pooling == "max" else layers.AveragePooling2D
+    input_shape: tuple[int, int, int],
+    conv_filters: tuple[int, ...],
+    kernel_size: int,
+    padding: str,
+    conv_strides: tuple[int, int],
+    pooling: str,
+    pool_size: tuple[int, int],
+    dense_units: tuple[int, ...],
+    dropout: float,
+) -> keras.Model:
+    """Build and return the complete GAN-Busters CNN model."""
 
-    model = models.Sequential(name="gan_busters_cnn")
-    model.add(layers.Input(shape=(None, None, None), name="raw_image_input"))
+    # ---------------------------------------------------------
+    # Input
+    # ---------------------------------------------------------
+    inputs = keras.Input(
+        shape=(None, None, None),
+        name="image",
+    )
 
-    # Embedded Preprocessing Layers
-    model.add(ChannelStandardization(name="channel_standardization"))
-    model.add(layers.Resizing(height=32, width=32, interpolation="bilinear", crop_to_aspect_ratio=True, name="crop_and_resize"))
-    
-    if config.NORMALIZE_PIXELS:
-        model.add(layers.Rescaling(1.0 / 255.0, name="pixel_normalization"))
+    # ---------------------------------------------------------
+    # Preprocessing
+    # ---------------------------------------------------------
+    x = ChannelStandardization(
+        name="channel_standardization",
+    )(inputs)
 
-    # Convolutional Layers
-    for i, filters in enumerate(conv_filters):
-        model.add(layers.Conv2D(
+    x = layers.Resizing(
+        height=input_shape[0],
+        width=input_shape[1],
+        interpolation="bilinear",
+        crop_to_aspect_ratio=True,
+        name="resize",
+    )(x)
+
+    x = layers.Rescaling(
+        scale=1.0 / 255.0,
+        name="normalization",
+    )(x)
+
+    # ---------------------------------------------------------
+    # Convolutional blocks
+    # ---------------------------------------------------------
+    for i, filters in enumerate(conv_filters, start=1):
+        x = layers.Conv2D(
             filters=filters,
-            kernel_size=(kernel_size, kernel_size),
+            kernel_size=kernel_size,
+            strides=conv_strides,
             padding=padding,
             activation="relu",
-            name=f"conv2d_{i+1}"
-        ))
+            name=f"conv_{i}",
+        )(x)
 
-    model.add(pool_layer(pool_size=pool_size, name="pooling"))
-    model.add(layers.Flatten(name="flatten"))
+        if pooling == "max":
+            x = layers.MaxPooling2D(
+                pool_size=pool_size,
+                name=f"max_pool_{i}",
+            )(x)
+        elif pooling == "avg":
+            x = layers.AveragePooling2D(
+                pool_size=pool_size,
+                name=f"avg_pool_{i}",
+            )(x)
+        else:
+            raise ValueError(
+                f"Unsupported pooling type: {pooling}. "
+                "Expected 'max' or 'avg'."
+            )
 
-    # Dense Layers
-    for j, units in enumerate(dense_units):
-        model.add(layers.Dense(units, activation="relu", name=f"dense_{j+1}"))
+    # ---------------------------------------------------------
+    # Fully connected network
+    # ---------------------------------------------------------
+    x = layers.Flatten(name="flatten")(x)
 
-    if dropout > 0.0:
-        model.add(layers.Dropout(dropout, name="dropout"))
+    for i, units in enumerate(dense_units, start=1):
+        x = layers.Dense(
+            units=units,
+            activation="relu",
+            name=f"dense_{i}",
+        )(x)
 
-    # Binary Output
-    model.add(layers.Dense(1, activation="sigmoid", name="output_sigmoid"))
+        if dropout > 0:
+            x = layers.Dropout(
+                rate=dropout,
+                name=f"dropout_{i}",
+            )(x)
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-    model.compile(
-        optimizer=optimizer,
-        loss=config.DEFAULT_LOSS,
-        metrics=["accuracy"]
+    # ---------------------------------------------------------
+    # Output
+    # ---------------------------------------------------------
+    outputs = layers.Dense(
+        units=1,
+        activation="sigmoid",
+        name="fake_probability",
+    )(x)
+
+    return keras.Model(
+        inputs=inputs,
+        outputs=outputs,
+        name="gan_busters_cnn",
     )
-    return model

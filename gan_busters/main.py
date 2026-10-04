@@ -1,5 +1,14 @@
-import argparse
+"""
+Central command-line interface for GAN-Busters.
 
+This module provides a single entry point for the project's main workflows,
+including model experimentation, final training, and evaluation.
+
+Usage:
+    python -m gan_busters.main --help
+"""
+
+import typer
 from loguru import logger
 import tensorflow as tf
 
@@ -9,46 +18,53 @@ from gan_busters.modeling.experiment import run_experiment
 from gan_busters.modeling.predict import predict_images
 from gan_busters.modeling.train import train_final_model
 
+app = typer.Typer(
+    help="GAN-Busters command-line interface."
+)
 
-def main():
-    parser = argparse.ArgumentParser(description="GAN-Busters Central CLI")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+@app.command("experiment", help="Run a model-selection experiment.")
+def experiment(
+    epochs: int = typer.Option(config.DEFAULT_EPOCHS, help="Number of epochs"),
+    batch_size: int = typer.Option(config.DEFAULT_BATCH_SIZE, help="Batch size"),
+    learning_rate: float = typer.Option(config.DEFAULT_LEARNING_RATE, help="Learning rate"),
+    kernel_size: int = typer.Option(config.DEFAULT_KERNEL_SIZE, help="Kernel size"),
+    padding: str = typer.Option(config.DEFAULT_PADDING, help="Padding"),
+    pooling: str = typer.Option(config.DEFAULT_POOLING, help="Pooling"),
+    dropout: float = typer.Option(config.DEFAULT_DROPOUT, help="Dropout")
+):
+    class Args:
+        pass
+    
+    args = Args()
+    args.epochs = epochs
+    args.batch_size = batch_size
+    args.learning_rate = learning_rate
+    args.kernel_size = kernel_size
+    args.padding = padding
+    args.pooling = pooling
+    args.dropout = dropout
 
-    # Subcommand: experiment
-    exp_parser = subparsers.add_parser("experiment", help="Run model exploration experiment")
-    exp_parser.add_argument("--epochs", type=int, default=config.DEFAULT_EPOCHS)
-    exp_parser.add_argument("--batch-size", type=int, default=config.DEFAULT_BATCH_SIZE)
-    exp_parser.add_argument("--learning-rate", type=float, default=config.DEFAULT_LEARNING_RATE)
-    exp_parser.add_argument("--kernel-size", type=int, default=config.DEFAULT_KERNEL_SIZE)
-    exp_parser.add_argument("--padding", type=str, default=config.DEFAULT_PADDING)
-    exp_parser.add_argument("--pooling", type=str, default=config.DEFAULT_POOLING)
-    exp_parser.add_argument("--dropout", type=float, default=config.DEFAULT_DROPOUT)
+    run_experiment(args)
 
-    # Subcommand: train
-    train_parser = subparsers.add_parser("train", help="Train final model on complete train set using MLflow run ID")
-    train_parser.add_argument("--run-id", type=str, required=True, help="Selected MLflow run ID")
+@app.command("train", help="Train final model on complete train set using MLflow run ID")
+def train(
+    run_id: str = typer.Option(..., "--run-id", help="Selected MLflow run ID")
+):
+    train_final_model(run_id)
 
-    # Subcommand: evaluate
-    subparsers.add_parser("evaluate", help="Evaluate final model on test split")
+@app.command("evaluate", help="Evaluate final model on test split")
+def evaluate():
+    evaluate_final_model()
 
-    # Subcommand: predict
-    pred_parser = subparsers.add_parser("predict", help="Predict on a single image")
-    pred_parser.add_argument("--image-path", type=str, required=True, help="Path to the image file")
-
-    args = parser.parse_args()
-
-    if args.command == "experiment":
-        run_experiment(args)
-    elif args.command == "train":
-        train_final_model(args.run_id)
-    elif args.command == "evaluate":
-        evaluate_final_model()
-    elif args.command == "predict":
-        img_bytes = tf.io.read_file(args.image_path)
-        img = tf.io.decode_image(img_bytes, expand_animations=False)
-        preds = predict_images(img)
-        logger.info(f"Prediction for {args.image_path}: {preds}")
+@app.command("predict", help="Predict on a single image")
+def predict(
+    image_path: str = typer.Option(..., "--image-path", help="Path to the image file")
+):
+    img_bytes = tf.io.read_file(image_path)
+    img = tf.io.decode_image(img_bytes, expand_animations=False)
+    preds = predict_images(img)
+    logger.info(f"Prediction for {image_path}: {preds}")
 
 
 if __name__ == "__main__":
-    main()
+    app()

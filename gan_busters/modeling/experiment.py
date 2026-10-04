@@ -1,80 +1,172 @@
+"""
+Model-selection experiment runner for GAN-Busters.
+
+This module orchestrates a single training and validation experiment.
+
+Configuration defaults are loaded from config.py and may be overridden
+through CLI arguments. Each run builds a fresh model, trains it on the
+training subset, evaluates it on the validation subset, and logs the
+configuration and results to MLflow/DagsHub.
+
+The predefined CIFAKE test set is never used by this workflow.
+"""
+
 from codecarbon import EmissionsTracker
 from loguru import logger
-import mlflow
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import tensorflow as tf
 
-from gan_busters import config
+from gan_busters.config import (
+    PROCESSED_DATA_DIR,
+    INPUT_SHAPE,
+    DEFAULT_CONV_FILTERS,
+    DEFAULT_DENSE_UNITS,
+    DEFAULT_KERNEL_SIZE,
+    DEFAULT_PADDING,
+    DEFAULT_CONV_STRIDES,
+    DEFAULT_POOLING,
+    DEFAULT_POOL_SIZE,
+    DEFAULT_LOSS,
+    DEFAULT_OPTIMIZER,
+    DEFAULT_EPOCHS,
+    DEFAULT_LEARNING_RATE,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_DROPOUT,
+    DEFAULT_VALIDATION_SIZE,
+    DEFAULT_MLFLOW_EXPERIMENT,
+    RANDOM_SEED,
+)
+
 from gan_busters.modeling.architecture import build_model
-from gan_busters.modeling.evaluate import evaluate_model
-from gan_busters.modeling.preprocessing import build_dataset
-from gan_busters.modeling.tracking import init_tracking
 from gan_busters.modeling.train import train_model
+from gan_busters.modeling.evaluate import evaluate_model
+from gan_busters.modeling.tracking import (
+    initialize_mlflow,
+    set_experiment,
+    start_run,
+    log_params,
+    log_metrics,
+)
 
-'''
-The orchestrator divides the train set in 80/20 for model selection
-and logs the parameters and metrics in DagsHub/MLflow. 
-'''
 
-def run_experiment(args):
-    """
-    Workflow for hyperparameter exploration and model selection.
-    Splits train records into train/val subsets and logs to DagsHub.
-    """
-    init_tracking()
+def run_experiment(
+    experiment_name: str = DEFAULT_MLFLOW_EXPERIMENT,
+    run_name: str = "baseline",
+    kernel_size: int = DEFAULT_KERNEL_SIZE,
+    padding: str = DEFAULT_PADDING,
+    pooling: str = DEFAULT_POOLING,
+    learning_rate: float = DEFAULT_LEARNING_RATE,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    dropout: float = DEFAULT_DROPOUT,
+    epochs: int = DEFAULT_EPOCHS,
+):
+    """Run one model-selection experiment."""
+    gpus = tf.config.list_physical_devices("GPU")
 
-    accepted_records_path = config.PROCESSED_DATA_DIR / "accepted_records.csv"
-    df = pd.read_csv(accepted_records_path)
-    train_records = df[df["split"] == "train"]
+    if gpus:
+        logger.info(f"GPU available: {gpus}")
+    else:
+        logger.info("No GPU detected. Training will use CPU.")
 
-    # Stratified 80/20 split 
-    train_sub, val_sub = train_test_split(
+    # ---------------------------------------------------------
+    # Load predefined training records
+    # ---------------------------------------------------------
+    records = pd.read_csv(
+        PROCESSED_DATA_DIR / "accepted_records.csv"
+    )
+
+    train_records = records[
+        records["split"] == "train"
+    ].copy()
+
+    # ---------------------------------------------------------
+    # Create reproducible train / validation split
+    # ---------------------------------------------------------
+    if train_records["subclass"].notna().all():
+        stratify_by = (
+            train_records["label"].astype(str)
+            + "_"
+            + train_records["subclass"].astype(str)
+        )
+    else:
+        stratify_by = train_records["label"]
+
+    train_records, validation_records = train_test_split(
         train_records,
-        test_size=0.2,
-        stratify=train_records["label"],
-        random_state=config.RANDOM_SEED
+        test_size=DEFAULT_VALIDATION_SIZE,
+        random_state=RANDOM_SEED,
+        stratify=stratify_by,
     )
 
-    val_dataset = build_dataset(val_sub, batch_size=args.batch_size, shuffle=False)
-
+    # ---------------------------------------------------------
+    # Build model
+    # ---------------------------------------------------------
     model = build_model(
-        kernel_size=args.kernel_size,
-        padding=args.padding,
-        pooling=args.pooling,
-        learning_rate=args.learning_rate,
-        dropout=args.dropout
+        input_shape=INPUT_SHAPE,
+        conv_filters=DEFAULT_CONV_FILTERS,
+        kernel_size=kernel_size,
+        padding=padding,
+        conv_strides=DEFAULT_CONV_STRIDES,
+        pooling=pooling,
+        pool_size=DEFAULT_POOL_SIZE,
+        dense_units=DEFAULT_DENSE_UNITS,
+        dropout=dropout,
     )
 
-    run_name = f"exp_k{args.kernel_size}_{args.padding}_{args.pooling}_lr{args.learning_rate}_bs{args.batch_size}"
+    # ---------------------------------------------------------
+    # Configure MLflow
+    # ---------------------------------------------------------
+    initialize_mlflow()
+    set_experiment(experiment_name)
 
-    with mlflow.start_run(run_name=run_name) as run:
-        params = {
-            "kernel_size": args.kernel_size,
-            "padding": args.padding,
-            "pooling": args.pooling,
-            "learning_rate": args.learning_rate,
-            "batch_size": args.batch_size,
-            "dropout": args.dropout,
-            "epochs": args.epochs,
-            "random_seed": config.RANDOM_SEED
-        }
-        mlflow.log_params(params)
+    params = {
+        "input_shape": str(INPUT_SHAPE),
+        "conv_filters": str(DEFAULT_CONV_FILTERS),
+        "kernel_size": kernel_size,
+        "padding": padding,
+        "conv_strides": str(DEFAULT_CONV_STRIDES),
+        "pooling": pooling,
+        "pool_size": str(DEFAULT_POOL_SIZE),
+        "dense_units": str(DEFAULT_DENSE_UNITS),
+        "dropout": dropout,
+        "optimizer": DEFAULT_OPTIMIZER,
+        "loss": DEFAULT_LOSS,
+        "learning_rate": learning_rate,
+        "batch_size": batch_size,
+        "epochs": epochs,
+        "validation_size": DEFAULT_VALIDATION_SIZE,
+        "random_seed": RANDOM_SEED,
+    }
+
+    # ---------------------------------------------------------
+    # Train, track emissions, and evaluate
+    # ---------------------------------------------------------
+    with start_run(run_name):
+        log_params(params)
 
         tracker = EmissionsTracker(project_name="CIFAKE_Experiment", save_to_file=False)
         tracker.start()
 
         logger.info(f"Starting run: {run_name}")
-        train_model(
-            model,
-            train_sub,
-            epochs=args.epochs,
-            batch_size=args.batch_size,
-            validation_dataset=val_dataset
+        history = train_model(
+            model=model,
+            train_records=train_records,
+            optimizer=DEFAULT_OPTIMIZER,
+            loss=DEFAULT_LOSS,
+            learning_rate=learning_rate,
+            epochs=epochs,
+            batch_size=batch_size,
         )
 
         emissions = tracker.stop()
-        mlflow.log_metric("emissions_kg_co2", emissions)
+        log_metrics({"emissions_kg_co2": emissions})
 
-        val_metrics = evaluate_model(model, val_sub, batch_size=args.batch_size)
-        mlflow.log_metrics(val_metrics)
-        logger.success(f"Run completed. Validation Macro F1: {val_metrics['macro_f1']:.4f} | Run ID: {run.info.run_id}")
+        metrics = evaluate_model(
+            model=model,
+            evaluation_records=validation_records,
+            batch_size=batch_size,
+        )
+
+        log_metrics(metrics)
+        logger.success(f"Run completed. Validation Macro F1: {metrics['macro_f1']:.4f}")

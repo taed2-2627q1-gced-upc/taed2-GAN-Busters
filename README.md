@@ -233,6 +233,50 @@ The resulting `data/interim/` and `data/processed/` outputs are managed and
 versioned by DVC. `data/raw/` participates in the pipeline but is not stored in
 the DVC remote.
 
+
+### 3. MLflow and DagsHub setup
+
+The project uses **MLflow** for experiment tracking and **DagsHub** as the remote
+tracking server and experiment visualization interface.
+
+Before running model experiments for the first time, verify that the local
+environment can authenticate with DagsHub and successfully log MLflow runs.
+
+With the `gan-busters` environment activated and from the project root, run:
+
+```bash
+python -m gan_busters.modeling.smoke_test
+```
+
+On the first execution, DagsHub may request authentication. Follow the
+instructions displayed in the terminal and authorize access to the project
+repository.
+
+The smoke test does not train a model or modify the dataset. It only creates a
+small test experiment and logs dummy parameters and metrics through the same
+tracking utilities used by the modeling pipeline.
+
+After the command finishes, open the **Experiments** section of the project
+repository in DagsHub.
+
+A successful setup should show the `smoke-test` experiment containing a
+`connection-test` run with the test parameter and metric logged by the script.
+
+If the run appears correctly in DagsHub, the connection is working:
+
+```text
+GAN-Busters
+    ↓
+gan_busters/modeling/tracking.py
+    ↓
+MLflow
+    ↓
+DagsHub
+```
+
+The environment is then ready to track the model-selection experiments executed
+through the GAN-Busters CLI.
+
 ---
 
 ## Project Organization

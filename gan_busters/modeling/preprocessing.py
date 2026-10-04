@@ -1,68 +1,144 @@
+"""
+Image preprocessing utilities for GAN-Busters.
+
+Provides dataset construction utilities and serializable preprocessing
+components applied consistently during training and inference.
+"""
+
+from pathlib import Path
+
 import pandas as pd
 import tensorflow as tf
-from tensorflow.keras import layers  # type: ignore[import-untyped]
+from tensorflow import keras
 
-from gan_busters import config
+from gan_busters.config import RAW_DATA_DIR
 
 
-@tf.keras.utils.register_keras_serializable(package="gan_busters")
-class ChannelStandardization(layers.Layer):
+# -------------------------------------------------------------------------
+# Model preprocessing
+# -------------------------------------------------------------------------
+
+@keras.utils.register_keras_serializable(package="gan_busters")
+class ChannelStandardization(keras.layers.Layer):
     """
-    Standardizes input channels to 3-channel RGB:
-    - 1 channel (Grayscale) -> Converts to RGB
-    - 3 channels (RGB) -> Keeps unchanged
-    - 4 channels (RGBA) -> Alpha blends with a white background into RGB
+    Convert grayscale, RGB, or RGBA images to RGB.
+
+    Rules:
+        - 1 channel: replicate grayscale values across RGB channels.
+        - 3 channels: preserve RGB values unchanged.
+        - 4 channels: composite RGBA values onto a white background.
+
+    Output pixel values remain in the [0, 255] range.
     """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def call(self, inputs):
-        x = tf.cast(inputs, tf.float32)
-        channels = tf.shape(x)[-1]
+        inputs = tf.cast(inputs, tf.float32)
+        channels = tf.shape(inputs)[-1]
 
-        def handle_grayscale():
-            return tf.image.grayscale_to_rgb(x)
-
-        def handle_rgb():
-            return x
-
-        def handle_rgba():
-            rgb = x[..., :3]
-            alpha = x[..., 3:]
-            max_alpha = tf.reduce_max(alpha)
-            # Normalize alpha to [0, 1] if needed
-            alpha_norm = tf.cond(max_alpha > 1.0, lambda: alpha / 255.0, lambda: alpha)
-            white = tf.cond(tf.reduce_max(rgb) > 1.0, lambda: 255.0, lambda: 1.0)
-            return rgb * alpha_norm + white * (1.0 - alpha_norm)
-
-        return tf.cond(
-            tf.equal(channels, 1),
-            handle_grayscale,
-            lambda: tf.cond(tf.equal(channels, 4), handle_rgba, handle_rgb)
+        valid_channels = tf.reduce_any(
+            tf.equal(channels, [1, 3, 4])
         )
 
+        tf.debugging.assert_equal(
+            valid_channels,
+            True,
+            message="Images must have 1, 3, or 4 channels.",
+        )
 
-def _load_and_decode_image(rel_path, label):
-    abs_path = config.PROJ_ROOT / rel_path
-    img_bytes = tf.io.read_file(str(abs_path))
-    img = tf.io.decode_image(img_bytes, expand_animations=False)
-    return img, tf.cast(label, tf.float32)
+        def grayscale_to_rgb():
+            return tf.image.grayscale_to_rgb(inputs)
+
+        def keep_rgb():
+            return inputs
+
+        def rgba_to_rgb():
+            rgb = inputs[..., :3]
+            alpha = inputs[..., 3:4] / 255.0
+            white = tf.ones_like(rgb) * 255.0
+
+            return alpha * rgb + (1.0 - alpha) * white
+
+        return tf.case(
+            [
+                (tf.equal(channels, 1), grayscale_to_rgb),
+                (tf.equal(channels, 4), rgba_to_rgb),
+            ],
+            default=keep_rgb,
+            exclusive=True,
+        )
+
+    def compute_output_shape(self, input_shape):
+        """Declare that the output always contains three channels."""
+        return (*input_shape[:-1], 3)
+
+    def get_config(self):
+        """Return layer configuration for serialization."""
+        return super().get_config()
 
 
-def build_dataset(records_df: pd.DataFrame, batch_size: int = config.DEFAULT_BATCH_SIZE, shuffle: bool = True):
+# -------------------------------------------------------------------------
+# Dataset construction
+# -------------------------------------------------------------------------
+
+def _load_image(
+    path: tf.Tensor,
+    label: tf.Tensor,
+) -> tuple[tf.Tensor, tf.Tensor]:
+    """Read and decode one image without applying model preprocessing."""
+
+    image_bytes = tf.io.read_file(path)
+
+    image = tf.io.decode_image(
+        image_bytes,
+        channels=0,
+        expand_animations=False,
+    )
+
+    image.set_shape([None, None, None])
+
+    return image, label
+
+
+def build_dataset(
+    records: pd.DataFrame,
+    batch_size: int,
+    shuffle: bool = False,
+) -> tf.data.Dataset:
     """
-    Builds an optimized tf.data.Dataset from accepted records DataFrame.
-    Cropping, resizing, and normalization are deferred to the Keras model.
-    """
-    paths = records_df["relative_path"].values
-    labels = records_df["label"].values  # 0 for REAL, 1 for FAKE
+    Build a TensorFlow dataset from validated image records.
 
-    dataset = tf.data.Dataset.from_tensor_slices((paths, labels))
+    Images are decoded only. Channel standardization, resizing, cropping,
+    and normalization are handled by the model itself.
+    """
+
+    image_paths = [
+        str(RAW_DATA_DIR / Path(relative_path))
+        for relative_path in records["relative_path"]
+    ]
+
+    labels = (
+        records["label"]
+        .map({"REAL": 0, "FAKE": 1})
+        .astype("float32")
+        .to_numpy()
+    )
+
+    dataset = tf.data.Dataset.from_tensor_slices(
+        (image_paths, labels)
+    )
 
     if shuffle:
-        dataset = dataset.shuffle(buffer_size=min(len(records_df), 10000), seed=config.RANDOM_SEED)
+        dataset = dataset.shuffle(
+            buffer_size=len(records),
+            reshuffle_each_iteration=True,
+        )
 
-    dataset = dataset.map(_load_and_decode_image, num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.map(
+        _load_image,
+        num_parallel_calls=tf.data.AUTOTUNE,
+    )
+
     dataset = dataset.batch(batch_size)
-    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+
     return dataset
