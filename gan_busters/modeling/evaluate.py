@@ -26,7 +26,6 @@ from gan_busters.config import (
 from gan_busters.modeling.preprocessing import build_dataset
 
 
-
 # -------------------------------------------------------------------------
 # Reusable evaluation function
 # -------------------------------------------------------------------------

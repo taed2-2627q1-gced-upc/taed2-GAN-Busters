@@ -23,18 +23,18 @@ Usage:
     python -m gan_busters.data_pipeline.inspect
 """
 
-from pathlib import Path
+import csv
 import hashlib
 from io import BytesIO
-from PIL import Image, UnidentifiedImageError
+from pathlib import Path
 import re
-import csv
 
 from loguru import logger
+from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import typer
 
-from gan_busters.config import RAW_DATA_DIR, INTERIM_DATA_DIR, CIFAR10_CLASSES
+from gan_busters.config import CIFAR10_CLASSES, INTERIM_DATA_DIR, RAW_DATA_DIR
 
 app = typer.Typer()
 

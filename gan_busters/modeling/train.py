@@ -1,24 +1,21 @@
 """
 Model training utilities and final-training workflow for GAN-Busters.
 
-This module provides reusable model training functionality.
-
-When executed directly, the selected configuration is retrieved from an
-MLflow experiment run, rebuilt as a fresh model, trained on the complete
-predefined training set, and saved as the final trained model.
+This module provides reusable model training functionality with carbon tracking
+and MLflow configuration recovery.
 """
 
 import ast
-import typer
+from pathlib import Path
 
+from codecarbon import EmissionsTracker
+from loguru import logger
 import mlflow
 import pandas as pd
 from tensorflow import keras
+import typer
 
-from gan_busters.config import (
-    PROCESSED_DATA_DIR,
-    MODELS_DIR,
-)
+from gan_busters.config import PROCESSED_DATA_DIR, MODELS_DIR
 from gan_busters.modeling.architecture import build_model
 from gan_busters.modeling.preprocessing import build_dataset
 from gan_busters.modeling.tracking import initialize_mlflow
@@ -39,10 +36,7 @@ def train_model(
 ) -> keras.callbacks.History:
     """
     Compile and train a model on the supplied training records.
-
-    This function does not save the model and does not interact with MLflow.
     """
-
     if optimizer.lower() == "adam":
         optimizer_instance = keras.optimizers.Adam(
             learning_rate=learning_rate
@@ -66,6 +60,7 @@ def train_model(
     history = model.fit(
         train_dataset,
         epochs=epochs,
+        verbose=1,
     )
 
     return history
@@ -82,7 +77,6 @@ def load_run_configuration(run_id: str) -> dict:
     MLflow parameters are stored as strings, so values are converted back
     to the Python types expected by the model and training functions.
     """
-
     run = mlflow.get_run(run_id)
     params = run.data.params
 
@@ -108,7 +102,6 @@ def load_run_configuration(run_id: str) -> dict:
 # Final-training workflow
 # -------------------------------------------------------------------------
 
-
 def train_final_model(
     run_id: str = typer.Option(
         ...,
@@ -121,57 +114,49 @@ def train_final_model(
 ):
     """
     Rebuild a selected experiment configuration, train it on the complete
-    predefined training set, and save the resulting model.
+    predefined training set with carbon tracking, and save the resulting model.
     """
-
-    # Connect to the project's MLflow tracking server.
+    logger.info("Initializing DagsHub and MLflow tracking...")
     initialize_mlflow()
 
-    # Retrieve the selected experiment configuration.
-    config = load_run_configuration(run_id)
+    logger.info(f"Retrieving hyperparameters from MLflow run ID: {run_id}...")
+    cfg = load_run_configuration(run_id)
 
-    # Load all accepted records belonging to the predefined training set.
-    records = pd.read_csv(
-        PROCESSED_DATA_DIR / "accepted_records.csv"
-    )
+    accepted_records_path = PROCESSED_DATA_DIR / "accepted_records.csv"
+    df = pd.read_csv(accepted_records_path)
+    full_train_records = df[df["split"] == "train"].copy()
 
-    train_records = records[
-        records["split"] == "train"
-    ].copy()
-
-    # Build a fresh, untrained model from the selected configuration.
+    logger.info(f"Building model from configuration for run {run_id}...")
     model = build_model(
-        input_shape=config["input_shape"],
-        conv_filters=config["conv_filters"],
-        kernel_size=config["kernel_size"],
-        padding=config["padding"],
-        conv_strides=config["conv_strides"],
-        pooling=config["pooling"],
-        pool_size=config["pool_size"],
-        dense_units=config["dense_units"],
-        dropout=config["dropout"],
+        input_shape=cfg["input_shape"],
+        conv_filters=cfg["conv_filters"],
+        kernel_size=cfg["kernel_size"],
+        padding=cfg["padding"],
+        conv_strides=cfg["conv_strides"],
+        pooling=cfg["pooling"],
+        pool_size=cfg["pool_size"],
+        dense_units=cfg["dense_units"],
+        dropout=cfg["dropout"],
     )
 
-    # Train from scratch using the complete predefined training set.
+    logger.info(f"Training final model on {len(full_train_records)} total training images...")
+    tracker = EmissionsTracker(project_name="Final_Model_Training", save_to_file=False)
+    tracker.start()
+
     train_model(
         model=model,
-        train_records=train_records,
-        optimizer=config["optimizer"],
-        loss=config["loss"],
-        learning_rate=config["learning_rate"],
-        epochs=config["epochs"],
-        batch_size=config["batch_size"],
+        train_records=full_train_records,
+        optimizer=cfg["optimizer"],
+        loss=cfg["loss"],
+        learning_rate=cfg["learning_rate"],
+        epochs=cfg["epochs"],
+        batch_size=cfg["batch_size"],
     )
 
-    # Save the final trained model.
+    emissions = tracker.stop()
+    logger.info(f"Emissions recorded: {emissions} kg CO2")
+
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
-
-    model_path = MODELS_DIR / model_name
-    model.save(model_path)
-
-    print(f"Final model saved to: {model_path}")
-    print(f"Configuration selected from MLflow run: {run_id}")
-
-
-if __name__ == "__main__":
-    app()
+    out_path = MODELS_DIR / model_name
+    model.save(out_path)
+    logger.success(f"Final model saved to {out_path}")

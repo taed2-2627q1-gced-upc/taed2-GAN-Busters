@@ -22,19 +22,14 @@ Usage:
     python -m gan_busters.data_pipeline.data_integrity
 """
 
-from pathlib import Path
 import csv
+from pathlib import Path
 
 from loguru import logger
+from sklearn.model_selection import train_test_split
 import typer
 
-from sklearn.model_selection import train_test_split
-
-from gan_busters.config import (
-    INTERIM_DATA_DIR,
-    PROCESSED_DATA_DIR,
-    RANDOM_SEED
-)
+from gan_busters.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR, RANDOM_SEED
 
 app = typer.Typer()
 

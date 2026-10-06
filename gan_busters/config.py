@@ -9,6 +9,7 @@ on the current working directory.
 """
 
 from pathlib import Path
+
 from dotenv import load_dotenv
 from loguru import logger
 

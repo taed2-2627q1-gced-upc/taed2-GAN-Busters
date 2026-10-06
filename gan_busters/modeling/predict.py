@@ -12,7 +12,6 @@ No input images are read from or written to persistent storage here.
 """
 
 from collections.abc import Sequence
-
 import tensorflow as tf
 from tensorflow import keras
 
@@ -55,7 +54,6 @@ def predict_images(
     predictions = []
 
     for image in images:
-
         # Add the batch dimension expected by the Keras model.
         image_batch = tf.expand_dims(image, axis=0)
 
@@ -68,14 +66,14 @@ def predict_images(
             tf.reshape(probability, [-1])[0].numpy()
         )
 
+        label = "FAKE" if fake_probability >= threshold else "REAL"
+        confidence = fake_probability if label == "FAKE" else (1.0 - fake_probability)
+
         predictions.append(
             {
-                "label": (
-                    "FAKE"
-                    if fake_probability >= threshold
-                    else "REAL"
-                ),
-                "fake_probability": fake_probability,
+                "label": label,
+                "confidence_score": round(confidence, 4),
+                "fake_probability": round(fake_probability, 4),
             }
         )
 

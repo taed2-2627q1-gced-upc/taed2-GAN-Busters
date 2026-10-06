@@ -30,9 +30,6 @@ def build_model(
     # ---------------------------------------------------------
     # Input
     # ---------------------------------------------------------
-
-    # Spatial dimensions and channel count are flexible here because
-    # preprocessing standardizes the image before it reaches the CNN.
     inputs = keras.Input(
         shape=(None, None, None),
         name="image",
@@ -41,14 +38,10 @@ def build_model(
     # ---------------------------------------------------------
     # Preprocessing
     # ---------------------------------------------------------
-
-    # Grayscale / RGB / RGBA -> RGB
     x = ChannelStandardization(
         name="channel_standardization",
     )(inputs)
 
-    # Center crop to the target aspect ratio and resize using
-    # bilinear interpolation.
     x = layers.Resizing(
         height=input_shape[0],
         width=input_shape[1],
@@ -57,7 +50,6 @@ def build_model(
         name="resize",
     )(x)
 
-    # Normalize pixel values from [0, 255] to [0, 1].
     x = layers.Rescaling(
         scale=1.0 / 255.0,
         name="normalization",
@@ -66,9 +58,7 @@ def build_model(
     # ---------------------------------------------------------
     # Convolutional blocks
     # ---------------------------------------------------------
-
     for i, filters in enumerate(conv_filters, start=1):
-
         x = layers.Conv2D(
             filters=filters,
             kernel_size=kernel_size,
@@ -83,13 +73,11 @@ def build_model(
                 pool_size=pool_size,
                 name=f"max_pool_{i}",
             )(x)
-
         elif pooling == "avg":
             x = layers.AveragePooling2D(
                 pool_size=pool_size,
                 name=f"avg_pool_{i}",
             )(x)
-
         else:
             raise ValueError(
                 f"Unsupported pooling type: {pooling}. "
@@ -99,11 +87,9 @@ def build_model(
     # ---------------------------------------------------------
     # Fully connected network
     # ---------------------------------------------------------
-
     x = layers.Flatten(name="flatten")(x)
 
     for i, units in enumerate(dense_units, start=1):
-
         x = layers.Dense(
             units=units,
             activation="relu",
@@ -119,7 +105,6 @@ def build_model(
     # ---------------------------------------------------------
     # Output
     # ---------------------------------------------------------
-
     outputs = layers.Dense(
         units=1,
         activation="sigmoid",

@@ -11,11 +11,11 @@ configuration and results to MLflow/DagsHub.
 The predefined CIFAKE test set is never used by this workflow.
 """
 
+from codecarbon import EmissionsTracker
+from loguru import logger
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
-from loguru import logger
-
 
 from gan_busters.config import (
     PROCESSED_DATA_DIR,
@@ -72,7 +72,6 @@ def run_experiment(
     # ---------------------------------------------------------
     # Load predefined training records
     # ---------------------------------------------------------
-
     records = pd.read_csv(
         PROCESSED_DATA_DIR / "accepted_records.csv"
     )
@@ -84,7 +83,6 @@ def run_experiment(
     # ---------------------------------------------------------
     # Create reproducible train / validation split
     # ---------------------------------------------------------
-
     if train_records["subclass"].notna().all():
         stratify_by = (
             train_records["label"].astype(str)
@@ -104,7 +102,6 @@ def run_experiment(
     # ---------------------------------------------------------
     # Build model
     # ---------------------------------------------------------
-
     model = build_model(
         input_shape=INPUT_SHAPE,
         conv_filters=DEFAULT_CONV_FILTERS,
@@ -120,7 +117,6 @@ def run_experiment(
     # ---------------------------------------------------------
     # Configure MLflow
     # ---------------------------------------------------------
-
     initialize_mlflow()
     set_experiment(experiment_name)
 
@@ -144,13 +140,15 @@ def run_experiment(
     }
 
     # ---------------------------------------------------------
-    # Train and evaluate
+    # Train, track emissions, and evaluate
     # ---------------------------------------------------------
-
     with start_run(run_name):
-
         log_params(params)
 
+        tracker = EmissionsTracker(project_name="CIFAKE_Experiment", save_to_file=False)
+        tracker.start()
+
+        logger.info(f"Starting run: {run_name}")
         history = train_model(
             model=model,
             train_records=train_records,
@@ -161,6 +159,9 @@ def run_experiment(
             batch_size=batch_size,
         )
 
+        emissions = tracker.stop()
+        log_metrics({"emissions_kg_co2": emissions})
+
         metrics = evaluate_model(
             model=model,
             evaluation_records=validation_records,
@@ -168,3 +169,4 @@ def run_experiment(
         )
 
         log_metrics(metrics)
+        logger.success(f"Run completed. Validation Macro F1: {metrics['macro_f1']:.4f}")
