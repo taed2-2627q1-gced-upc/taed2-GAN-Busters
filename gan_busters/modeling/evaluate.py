@@ -2,14 +2,13 @@
 Model evaluation utilities and final-evaluation workflow for GAN-Busters.
 
 This module provides reusable functions for evaluating trained models on
-labelled image records.
-
-When executed directly, this module loads a saved model and evaluates it on
-the predefined CIFAKE test set.
+labelled image records and a workflow for evaluating the final saved model
+on the predefined CIFAKE test set.
 """
 
 import pandas as pd
-import typer
+from loguru import logger
+
 from sklearn.metrics import (
     f1_score,
     precision_score,
@@ -18,12 +17,9 @@ from sklearn.metrics import (
 )
 from tensorflow import keras
 
-from gan_busters.config import (
-    MODELS_DIR,
-    PROCESSED_DATA_DIR,
-    DEFAULT_BATCH_SIZE,
-)
+from gan_busters import config
 from gan_busters.modeling.preprocessing import build_dataset
+from gan_busters.modeling import tracking
 
 
 # -------------------------------------------------------------------------
@@ -33,8 +29,7 @@ from gan_busters.modeling.preprocessing import build_dataset
 def evaluate_model(
     model: keras.Model,
     evaluation_records: pd.DataFrame,
-    batch_size: int,
-    threshold: float = 0.5,
+    threshold: float = config.DEFAULT_THRESHOLD,
 ) -> dict:
     """
     Evaluate a trained model on labelled image records.
@@ -48,13 +43,14 @@ def evaluate_model(
 
     dataset = build_dataset(
         records=evaluation_records,
-        batch_size=batch_size,
+        batch_size=config.DEFAULT_EVAL_BATCH_SIZE,
+        shuffle=False,
     )
 
     # Ground-truth labels: REAL = 0, FAKE = 1.
     y_true = (
         evaluation_records["label"]
-        .map({"REAL": 0, "FAKE": 1})
+        .map(config.LABEL_MAPPING)
         .astype(int)
         .to_numpy()
     )
@@ -137,22 +133,12 @@ def evaluate_model(
 # -------------------------------------------------------------------------
 
 def evaluate_final_model(
-    model_name: str = typer.Option(
-        "gan_busters.keras",
-        help="Saved model filename inside the models directory.",
-    ),
-    batch_size: int = typer.Option(
-        DEFAULT_BATCH_SIZE,
-        help="Batch size used during evaluation.",
-    ),
-    threshold: float = typer.Option(
-        0.5,
-        help="Probability threshold used to classify an image as FAKE.",
-    ),
-):
+    model_name: str = config.DEFAULT_MODEL_NAME,
+    threshold: float = config.DEFAULT_THRESHOLD,
+) -> dict:
     """Evaluate a saved model on the predefined CIFAKE test set."""
 
-    model_path = MODELS_DIR / model_name
+    model_path = config.MODELS_DIR / model_name
 
     if not model_path.exists():
         raise FileNotFoundError(
@@ -163,9 +149,7 @@ def evaluate_final_model(
     model = keras.models.load_model(model_path)
 
     # Load accepted records and isolate the untouched CIFAKE test set.
-    records = pd.read_csv(
-        PROCESSED_DATA_DIR / "accepted_records.csv"
-    )
+    records = pd.read_csv(config.ACCEPTED_RECORDS_PATH)
 
     test_records = records[
         records["split"] == "test"
@@ -174,13 +158,28 @@ def evaluate_final_model(
     metrics = evaluate_model(
         model=model,
         evaluation_records=test_records,
-        batch_size=batch_size,
         threshold=threshold,
     )
 
-    print("\nCIFAKE test results")
-    print("-------------------")
-    print(f"threshold: {threshold}")
+    metrics["test_loss"] = metrics.pop("loss")
 
-    for name, value in metrics.items():
-        print(f"{name}: {value}")
+    # Log final evaluation to MLflow.
+    tracking.initialize_mlflow()
+    tracking.set_experiment(config.FINAL_EVALUATION_MLFLOW_EXPERIMENT)
+
+    with tracking.start_run(config.FINAL_EVALUATION_MLFLOW_RUN_NAME):
+        tracking.log_params({
+            "model_name": model_name,
+            "threshold": threshold,
+            "test_records": len(test_records),
+        })
+
+        tracking.log_metrics(metrics)
+
+    logger.success(
+        f"Final CIFAKE test evaluation completed. "
+        f"Macro F1: {metrics['macro_f1']:.4f}, "
+        f"ROC-AUC: {metrics['roc_auc']:.4f}"
+    )
+
+    return metrics

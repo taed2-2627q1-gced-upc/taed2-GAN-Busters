@@ -6,21 +6,20 @@ tracking server and provides reusable functions for experiment tracking.
 """
 
 from pathlib import Path
-import os
 
 import dagshub
 import mlflow
 from loguru import logger
 
-from gan_busters.config import DAGSHUB_OWNER, DAGSHUB_REPO
+from gan_busters import config
 
 
 def initialize_mlflow() -> None:
     """Configure MLflow to use the project's DagsHub tracking server."""
     logger.info("Initializing DagsHub and MLflow tracking...")
     dagshub.init(
-        repo_owner=DAGSHUB_OWNER,
-        repo_name=DAGSHUB_REPO,
+        repo_owner=config.DAGSHUB_OWNER,
+        repo_name=config.DAGSHUB_REPO,
         mlflow=True,
     )
 
@@ -48,15 +47,27 @@ def log_metrics(metrics: dict) -> None:
         mlflow.log_metrics(metrics)
 
 
+def log_history(history) -> None:
+    """Log Keras training history as epoch-level MLflow metrics."""
+    for metric_name, values in history.history.items():
+        for epoch, value in enumerate(values, start=1):
+            mlflow.log_metric(
+                key=metric_name,
+                value=float(value),
+                step=epoch,
+            )
+
+
 def log_artifact(
     path: Path | str,
     artifact_path: str | None = None,
 ) -> None:
     """Log a file as an artifact of the active run if it exists."""
-    local_path = str(path)
-    if os.path.exists(local_path):
+    local_path = Path(path)
+
+    if local_path.exists():
         mlflow.log_artifact(
-            local_path=local_path,
+            local_path=str(local_path),
             artifact_path=artifact_path,
         )
 
