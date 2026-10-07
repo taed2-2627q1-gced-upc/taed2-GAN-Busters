@@ -17,6 +17,7 @@ from gan_busters.modeling.evaluate import evaluate_final_model
 from gan_busters.modeling.experiment import run_experiment
 from gan_busters.modeling.predict import predict_from_path
 from gan_busters.modeling.train import train_final_model
+from gan_busters.modeling.register import register_model
 
 app = typer.Typer(
     help="GAN-Busters command-line interface."
@@ -122,9 +123,20 @@ def evaluate(
 ):
     evaluate_final_model(
         model_name=model_name,
-        batch_size=batch_size,
         threshold=threshold,
     )
+
+
+@app.command("register")
+def register(
+    run_id: str = typer.Option(
+        ...,
+        help="MLflow run ID containing the final model to register.",
+    ),
+):
+    """Register an evaluated final model in the MLflow Model Registry."""
+
+    register_model(run_id=run_id)
 
 
 @app.command("predict", help="Predict on one image or a directory of images")

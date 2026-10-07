@@ -33,6 +33,10 @@ REJECTED_RECORDS_PATH = PROCESSED_DATA_DIR / "rejected_records.csv"
 MODELS_DIR = PROJ_ROOT / "models"
 DEFAULT_MODEL_NAME = "gan_busters.keras"
 
+# Model registry
+FINAL_LOGGED_MODEL_NAME = "final_model"
+REGISTERED_MODEL_NAME = "gan_busters"
+
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 TABLES_DIR = REPORTS_DIR / "tables"
