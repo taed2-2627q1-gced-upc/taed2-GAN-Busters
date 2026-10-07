@@ -6,19 +6,17 @@ and MLflow configuration recovery.
 """
 
 import ast
-from pathlib import Path
 
 from codecarbon import EmissionsTracker
 from loguru import logger
 import mlflow
 import pandas as pd
 from tensorflow import keras
-import typer
 
-from gan_busters.config import PROCESSED_DATA_DIR, MODELS_DIR
+from gan_busters import config
 from gan_busters.modeling.architecture import build_model
 from gan_busters.modeling.preprocessing import build_dataset
-from gan_busters.modeling.tracking import initialize_mlflow
+from gan_busters.modeling import tracking
 
 
 # -------------------------------------------------------------------------
@@ -33,7 +31,9 @@ def train_model(
     learning_rate: float,
     epochs: int,
     batch_size: int,
-) -> keras.callbacks.History:
+    validation_records: pd.DataFrame | None = None,
+    carbon_project_name: str = config.CODECARBON_EXPERIMENT_PROJECT,
+) -> tuple[keras.callbacks.History, float]:
     """
     Compile and train a model on the supplied training records.
     """
@@ -41,6 +41,12 @@ def train_model(
         optimizer_instance = keras.optimizers.Adam(
             learning_rate=learning_rate
         )
+
+    elif optimizer.lower() == "rmsprop":
+        optimizer_instance = keras.optimizers.RMSprop(
+            learning_rate=learning_rate
+        )
+
     else:
         raise ValueError(
             f"Unsupported optimizer: {optimizer}"
@@ -57,13 +63,35 @@ def train_model(
         shuffle=True,
     )
 
-    history = model.fit(
-        train_dataset,
-        epochs=epochs,
-        verbose=1,
+    validation_dataset = None
+    
+    if validation_records is not None:
+        validation_dataset = build_dataset(
+            records=validation_records,
+            batch_size=config.DEFAULT_EVAL_BATCH_SIZE,
+            shuffle=False,
+        )
+
+    tracker = EmissionsTracker(
+        project_name=carbon_project_name,
+        save_to_file=False,
     )
 
-    return history
+    tracker.start()
+
+    try:
+        history = model.fit(
+            train_dataset,
+            validation_data=validation_dataset,
+            epochs=epochs,
+            verbose=1,
+        )
+
+    finally:
+        emissions = tracker.stop()
+
+    logger.info(f"Emissions recorded: {emissions} kg CO2")
+    return history, emissions
 
 
 # -------------------------------------------------------------------------
@@ -103,27 +131,22 @@ def load_run_configuration(run_id: str) -> dict:
 # -------------------------------------------------------------------------
 
 def train_final_model(
-    run_id: str = typer.Option(
-        ...,
-        help="MLflow run ID containing the selected model configuration.",
-    ),
-    model_name: str = typer.Option(
-        "gan_busters.keras",
-        help="Filename for the final trained model.",
-    ),
+    run_id: str,
+    model_name: str = config.DEFAULT_MODEL_NAME,
 ):
     """
     Rebuild a selected experiment configuration, train it on the complete
     predefined training set with carbon tracking, and save the resulting model.
     """
+    keras.utils.set_random_seed(config.RANDOM_SEED)
     logger.info("Initializing DagsHub and MLflow tracking...")
-    initialize_mlflow()
+    tracking.initialize_mlflow()
+    tracking.set_experiment(config.FINAL_MLFLOW_EXPERIMENT)
 
     logger.info(f"Retrieving hyperparameters from MLflow run ID: {run_id}...")
     cfg = load_run_configuration(run_id)
 
-    accepted_records_path = PROCESSED_DATA_DIR / "accepted_records.csv"
-    df = pd.read_csv(accepted_records_path)
+    df = pd.read_csv(config.ACCEPTED_RECORDS_PATH)
     full_train_records = df[df["split"] == "train"].copy()
 
     logger.info(f"Building model from configuration for run {run_id}...")
@@ -140,23 +163,40 @@ def train_final_model(
     )
 
     logger.info(f"Training final model on {len(full_train_records)} total training images...")
-    tracker = EmissionsTracker(project_name="Final_Model_Training", save_to_file=False)
-    tracker.start()
 
-    train_model(
-        model=model,
-        train_records=full_train_records,
-        optimizer=cfg["optimizer"],
-        loss=cfg["loss"],
-        learning_rate=cfg["learning_rate"],
-        epochs=cfg["epochs"],
-        batch_size=cfg["batch_size"],
-    )
+    with tracking.start_run(config.FINAL_MLFLOW_RUN_NAME):
+        tracking.log_params({
+            **cfg,
+            "source_run_id": run_id,
+            "training_records": len(full_train_records),
+        })
 
-    emissions = tracker.stop()
-    logger.info(f"Emissions recorded: {emissions} kg CO2")
+        _, emissions = train_model(
+            model=model,
+            train_records=full_train_records,
+            optimizer=cfg["optimizer"],
+            loss=cfg["loss"],
+            learning_rate=cfg["learning_rate"],
+            epochs=cfg["epochs"],
+            batch_size=cfg["batch_size"],
+            carbon_project_name=config.CODECARBON_FINAL_TRAINING_PROJECT,
+        )
 
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = MODELS_DIR / model_name
-    model.save(out_path)
+        tracking.log_metrics({
+            "emissions_kg_co2": emissions,
+        })
+
+        config.MODELS_DIR.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        out_path = config.MODELS_DIR / model_name
+        model.save(out_path)
+
+        tracking.log_model(
+            model=model,
+            name="final_model",
+        )
+
     logger.success(f"Final model saved to {out_path}")

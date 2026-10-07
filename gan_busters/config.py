@@ -26,8 +26,11 @@ INTERIM_DATA_DIR = DATA_DIR / "interim"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 CORRUPTED_DATA_DIR = DATA_DIR / "corrupted"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
+ACCEPTED_RECORDS_PATH = PROCESSED_DATA_DIR / "accepted_records.csv"
+VALIDATION_RECORDS_PATH = PROCESSED_DATA_DIR / "validation_records.csv"
 
 MODELS_DIR = PROJ_ROOT / "models"
+DEFAULT_MODEL_NAME = "gan_busters.keras"
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
@@ -37,7 +40,13 @@ TABLES_DIR = REPORTS_DIR / "tables"
 DAGSHUB_OWNER = "maribelpreite"
 DAGSHUB_REPO = "taed2-GAN-Busters"
 
-DEFAULT_MLFLOW_EXPERIMENT = "phase-1-convolutional-configuration"
+DEFAULT_MLFLOW_EXPERIMENT = "GAN-Busters Model Selection"
+
+FINAL_MLFLOW_EXPERIMENT = "GAN-Busters Final Training"
+FINAL_MLFLOW_RUN_NAME = "final-model-training"
+
+FINAL_EVALUATION_MLFLOW_EXPERIMENT = "GAN-Busters Final Evaluation"
+FINAL_EVALUATION_MLFLOW_RUN_NAME = "final-model-evaluation"
 
 # Reproducibility
 RANDOM_SEED = 1
@@ -56,6 +65,11 @@ CIFAR10_CLASSES = {
     10: "truck",
 }
 
+LABEL_MAPPING = {
+    "REAL": 0,
+    "FAKE": 1,
+}
+
 # Input
 INPUT_SHAPE = (32, 32, 3)
 NORMALIZE_PIXELS = True
@@ -64,7 +78,7 @@ NORMALIZE_PIXELS = True
 DEFAULT_CONV_FILTERS = (32, 32)
 DEFAULT_DENSE_UNITS = (64,)
 DEFAULT_KERNEL_SIZE = 3
-DEFAULT_PADDING = "same"
+DEFAULT_PADDING = "valid"
 DEFAULT_CONV_STRIDES = (1, 1)
 DEFAULT_POOLING = "max"
 DEFAULT_POOL_SIZE = (2, 2)
@@ -88,6 +102,17 @@ PHASE2_LEARNING_RATES = (1e-2, 1e-3, 1e-4)
 PHASE2_BATCH_SIZES = (32, 64, 128)
 PHASE2_DROPOUT = (0.0, 0.125, 0.25)
 
+# Eval parameters
+DEFAULT_EVAL_BATCH_SIZE = 128
+DEFAULT_THRESHOLD = 0.5
+
+# Prediction
+PREDICTIONS_DIR = PROJ_ROOT / "data" / "predictions"
+DEFAULT_PREDICTIONS_FILE = "predictions.csv"
+
+# Codecarbon
+CODECARBON_EXPERIMENT_PROJECT = "CIFAKE_Experiment"
+CODECARBON_FINAL_TRAINING_PROJECT = "Final_Model_Training"
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135
