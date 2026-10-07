@@ -14,13 +14,24 @@ stages:
       - gan_busters/data_pipeline/inspect.py
       - gan_busters/config.py
     outs:
-      - data/interim
+      - data/interim/inspected_records.csv
 
   data_integrity:
     cmd: python -m gan_busters.data_pipeline.data_integrity
     deps:
       - data/interim/inspected_records.csv
       - gan_busters/data_pipeline/data_integrity.py
+      - gan_busters/data_pipeline/split.py
       - gan_busters/config.py
     outs:
-      - data/processed
+      - data/interim/integrity_records.csv
+      - data/processed/rejected_records.csv
+
+  split_data:
+    cmd: python -m gan_busters.data_pipeline.split
+    deps:
+      - data/interim/integrity_records.csv
+      - gan_busters/data_pipeline/split.py
+      - gan_busters/config.py
+    outs:
+      - data/processed/accepted_records.csv
