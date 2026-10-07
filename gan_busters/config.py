@@ -27,10 +27,15 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 CORRUPTED_DATA_DIR = DATA_DIR / "corrupted"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 ACCEPTED_RECORDS_PATH = PROCESSED_DATA_DIR / "accepted_records.csv"
-VALIDATION_RECORDS_PATH = PROCESSED_DATA_DIR / "validation_records.csv"
+REJECTED_RECORDS_PATH = PROCESSED_DATA_DIR / "rejected_records.csv"
+# VALIDATION_RECORDS_PATH = PROCESSED_DATA_DIR / "validation_records.csv"
 
 MODELS_DIR = PROJ_ROOT / "models"
 DEFAULT_MODEL_NAME = "gan_busters.keras"
+
+# Model registry
+FINAL_LOGGED_MODEL_NAME = "final_model"
+REGISTERED_MODEL_NAME = "gan_busters"
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
@@ -78,9 +83,9 @@ NORMALIZE_PIXELS = True
 DEFAULT_CONV_FILTERS = (32, 32)
 DEFAULT_DENSE_UNITS = (64,)
 DEFAULT_KERNEL_SIZE = 3
-DEFAULT_PADDING = "valid"
+DEFAULT_PADDING = "same"
 DEFAULT_CONV_STRIDES = (1, 1)
-DEFAULT_POOLING = "max"
+DEFAULT_POOLING = "avg"
 DEFAULT_POOL_SIZE = (2, 2)
 
 # Default training configuration

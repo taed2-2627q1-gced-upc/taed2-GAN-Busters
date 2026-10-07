@@ -1,6 +1,5 @@
 """
-Apply dataset-level integrity rules to the inspected image records and produce
-the canonical dataset definition used by downstream model development.
+Apply dataset-level integrity rules to the inspected image records.
 
 This stage:
     - separates valid and invalid files based on the inspection results;
@@ -8,15 +7,13 @@ This stage:
     - rejects images with contradictory target labels;
     - prevents cross-split data leakage;
     - removes duplicate observations within the same split;
-    - preserves complete predefined train/test splits when available;
-    - generates a reproducible stratified train/test split when no complete split exists;
-    - creates a reproducible stratified validation split from the training records.
+    - preserves complete predefined train/test splits when available.
 
 Input:
     data/interim/inspected_records.csv
 
 Output:
-    data/processed/accepted_records.csv
+    data/interim/integrity_records.csv
     data/processed/rejected_records.csv
 
 Usage:
@@ -27,10 +24,10 @@ import csv
 from pathlib import Path
 
 from loguru import logger
-from sklearn.model_selection import train_test_split
 import typer
 
 from gan_busters import config
+from gan_busters.data_pipeline.split import has_complete_split
 
 app = typer.Typer()
 
@@ -67,7 +64,7 @@ def resolve_duplicates(
         # Same image assigned different labels -> reject every copy
         if len(labels) > 1:
             for record in duplicates:
-                record["reason"] = "conflicting_labels"
+                record["rejection_reason"] = "conflicting_labels"
                 rejected.append(record)
             continue
 
@@ -87,7 +84,7 @@ def resolve_duplicates(
 
                 for record in duplicates:
                     if record is not kept:
-                        record["reason"] = "cross_split_leakage"
+                        record["rejection_reason"] = "cross_split_leakage"
                         rejected.append(record)
 
                 continue
@@ -99,7 +96,7 @@ def resolve_duplicates(
         accepted.append(kept)
 
         for record in duplicates[1:]:
-            record["reason"] = (
+            record["rejection_reason"] = (
                 "duplicate_same_split"
                 if has_predefined_split
                 else "duplicate"
@@ -109,57 +106,11 @@ def resolve_duplicates(
     return accepted, rejected
 
 
-
-def has_complete_split(records: list[dict]) -> bool:
-    """Return True if every record has a predefined train/test split."""
-    return all(
-        record["split"] in {"train", "test"}
-        for record in records
-    )
-
-
-def assign_split(
-    records: list[dict],
-    split_size: float,
-    first_split: str,
-    second_split: str,
-) -> None:
-    """Assign a reproducible stratified split in place."""
-
-    has_subclasses = all(
-        record["subclass"] is not None
-        for record in records
-    )
-
-    if has_subclasses:
-        stratify = [
-            f"{record['label']}::{record['subclass']}"
-            for record in records
-        ]
-    else:
-        stratify = [
-            record["label"]
-            for record in records
-        ]
-
-    first_records, second_records = train_test_split(
-        records,
-        test_size=split_size,
-        random_state=config.RANDOM_SEED,
-        stratify=stratify,
-    )
-
-    for record in first_records:
-        record["split"] = first_split
-
-    for record in second_records:
-        record["split"] = second_split
-
-
 @app.command()
 def main(
     input_path: Path = config.INTERIM_DATA_DIR / "inspected_records.csv",
-    output_dir: Path = config.PROCESSED_DATA_DIR,
+    integrity_path: Path = config.INTERIM_DATA_DIR / "integrity_records.csv",
+    rejected_path: Path = config.PROCESSED_DATA_DIR / "rejected_records.csv",
 ):
     records = []
     rejected = []
@@ -178,12 +129,12 @@ def main(
                 for key, value in record.items()
             }
 
-            record["reason"] = None
+            record["rejection_reason"] = None
 
             if record["status"] == "valid":
                 records.append(record)
             else:
-                record["reason"] = record["status"]
+                record["rejection_reason"] = record["status"]
                 record["status"] = "rejected"
                 rejected.append(record)
 
@@ -218,66 +169,27 @@ def main(
     # ---------------------------------------------------------
     # 3. Resolve duplicates
     # ---------------------------------------------------------
-    accepted, duplicate_rejections = resolve_duplicates(records, has_predefined_split=complete_split)
+    integrity_records, duplicate_rejections = resolve_duplicates(records, has_predefined_split=complete_split)
 
     rejected.extend(duplicate_rejections)
 
     logger.info(
         f"Duplicate resolution complete: "
-        f"{len(accepted)} images accepted, "
+        f"{len(integrity_records)} images passed integrity checks, "
         f"{len(duplicate_rejections)} duplicates/conflicts rejected."
     )
 
     # ---------------------------------------------------------
-    # 4. Generate train/val/test split when required
+    # 4. Create output directories
     # ---------------------------------------------------------
-    if not complete_split:
-        assign_split(
-            accepted,
-            split_size=config.DEFAULT_TEST_SIZE,
-            first_split="train",
-            second_split="test"
-        )
-
-        logger.info(
-            f"New 80/20 stratified train/test split created "
-            f"using random seed {config.RANDOM_SEED}."
-        )
-
-    train_records = [record for record in accepted if record["split"] == "train"]
-
-    assign_split(
-        train_records,
-        split_size=config.DEFAULT_VALIDATION_SIZE,
-        first_split="train",
-        second_split="val"
-    )
-
-    logger.info(
-        f"Training records split into 80/20 train/validation "
-        f"using random seed {config.RANDOM_SEED}."
-    )
+    integrity_path.parent.mkdir(parents=True, exist_ok=True)
+    rejected_path.parent.mkdir(parents=True, exist_ok=True)
 
     # ---------------------------------------------------------
-    # 5. Assign final statuses
+    # 5. Write integrity records
     # ---------------------------------------------------------
-    for record in accepted:
-        record["status"] = "accepted"
 
-    for record in duplicate_rejections:
-        record["status"] = "rejected"
-
-    # ---------------------------------------------------------
-    # 6. Create output directory
-    # ---------------------------------------------------------
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # ---------------------------------------------------------
-    # 7. Write accepted records
-    # ---------------------------------------------------------
-    accepted_path = config.ACCEPTED_RECORDS_PATH
-
-    accepted_fields = [
+    integrity_fields = [
         "relative_path",
         "split",
         "label",
@@ -285,20 +197,19 @@ def main(
         "hash",
     ]
 
-    with accepted_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=accepted_fields)
+    with integrity_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=integrity_fields)
         writer.writeheader()
 
-        for record in accepted:
+        for record in integrity_records:
             writer.writerow({
                 field: record[field]
-                for field in accepted_fields
+                for field in integrity_fields
             })
 
     # ---------------------------------------------------------
-    # 8. Write rejected records
+    # 6. Write rejected records
     # ---------------------------------------------------------
-    rejected_path = output_dir / "rejected_records.csv"
 
     rejected_fields = [
         "relative_path",
@@ -306,8 +217,7 @@ def main(
         "label",
         "subclass",
         "hash",
-        "status",
-        "reason",
+        "rejection_reason",
     ]
 
     with rejected_path.open("w", newline="", encoding="utf-8") as f:
@@ -321,13 +231,14 @@ def main(
             })
 
     # ---------------------------------------------------------
-    # 9. Final summary
+    # 7. Final summary
     # ---------------------------------------------------------
     logger.success(
         f"Data integrity checks complete: "
-        f"{len(accepted)} records accepted, "
-        f"{len(rejected)} records rejected. "
-        f"Results saved to {output_dir}"
+        f"{len(integrity_records)} records passed integrity checks and "
+        f"were saved to {integrity_path}. "
+        f"{len(rejected)} records rejected and "
+        f"saved to {rejected_path}."
     )
 
 

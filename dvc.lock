@@ -59,18 +59,17 @@ stages:
       nfiles: 120001
     - path: gan_busters/config.py
       hash: md5
-      md5: d1c7742bfb5f7317f5e46d9b46249f05
-      size: 3261
+      md5: 703259a3666dc2a5c140277b3fec9770
+      size: 3360
     - path: gan_busters/data_pipeline/inspect.py
       hash: md5
       md5: bd557a340f0d9348e5d9810cb59b6476
       size: 5206
     outs:
-    - path: data/interim
+    - path: data/interim/inspected_records.csv
       hash: md5
-      md5: 6cfa18976db2ccfddb26d329d973cf80.dir
+      md5: db157acbf838707046866e3405175416
       size: 13472948
-      nfiles: 1
   data_integrity:
     cmd: python -m gan_busters.data_pipeline.data_integrity
     deps:
@@ -80,15 +79,42 @@ stages:
       size: 13472948
     - path: gan_busters/config.py
       hash: md5
-      md5: d1c7742bfb5f7317f5e46d9b46249f05
-      size: 3261
+      md5: 703259a3666dc2a5c140277b3fec9770
+      size: 3360
     - path: gan_busters/data_pipeline/data_integrity.py
       hash: md5
-      md5: 7ab329c3ee3f6638addbe5cc09669559
-      size: 10254
-    outs:
-    - path: data/processed
+      md5: 6d60e955c5c85dc01ab2312e9b7fadf9
+      size: 7864
+    - path: gan_busters/data_pipeline/split.py
       hash: md5
-      md5: 2014054f328cedb75a97fe68478da395.dir
-      size: 12753216
-      nfiles: 2
+      md5: ae5839590eb10a86098d975ea4e367ae
+      size: 5264
+    outs:
+    - path: data/interim/integrity_records.csv
+      hash: md5
+      md5: a4b7817de5227e1bbaf512d0dd5854c9
+      size: 12611923
+    - path: data/processed/rejected_records.csv
+      hash: md5
+      md5: b8b72e05850f9058541770358f402601
+      size: 168754
+  split_data:
+    cmd: python -m gan_busters.data_pipeline.split
+    deps:
+    - path: data/interim/integrity_records.csv
+      hash: md5
+      md5: a4b7817de5227e1bbaf512d0dd5854c9
+      size: 12611923
+    - path: gan_busters/config.py
+      hash: md5
+      md5: 703259a3666dc2a5c140277b3fec9770
+      size: 3360
+    - path: gan_busters/data_pipeline/split.py
+      hash: md5
+      md5: ae5839590eb10a86098d975ea4e367ae
+      size: 5264
+    outs:
+    - path: data/processed/accepted_records.csv
+      hash: md5
+      md5: 8c71df83fd93ff57154f7031869c4d4c
+      size: 12572441

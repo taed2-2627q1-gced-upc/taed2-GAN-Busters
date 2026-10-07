@@ -16,11 +16,9 @@ from gan_busters import config
 
 def initialize_mlflow() -> None:
     """Configure MLflow to use the project's DagsHub tracking server."""
-    logger.info("Initializing DagsHub and MLflow tracking...")
-    dagshub.init(
-        repo_owner=config.DAGSHUB_OWNER,
-        repo_name=config.DAGSHUB_REPO,
-        mlflow=True,
+    logger.info("Initializing MLflow tracking...")
+    mlflow.set_tracking_uri(
+        f"https://dagshub.com/{config.DAGSHUB_OWNER}/{config.DAGSHUB_REPO}.mlflow"
     )
 
 
@@ -72,9 +70,9 @@ def log_artifact(
         )
 
 
-def log_model(model, name: str = "model") -> None:
+def log_model(model, name: str = "model"):
     """Log a trained TensorFlow/Keras model."""
-    mlflow.keras.log_model(
+    return mlflow.keras.log_model(
         model=model,
-        name=name,
+        name=config.FINAL_LOGGED_MODEL_NAME,
     )
