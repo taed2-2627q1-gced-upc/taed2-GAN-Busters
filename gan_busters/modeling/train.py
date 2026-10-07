@@ -64,12 +64,21 @@ def train_model(
     )
 
     validation_dataset = None
+    callbacks = []
     
     if validation_records is not None:
         validation_dataset = build_dataset(
             records=validation_records,
             batch_size=config.DEFAULT_EVAL_BATCH_SIZE,
             shuffle=False,
+        )
+
+        callbacks.append(
+            keras.callbacks.EarlyStopping(
+                monitor="val_loss",
+                patience=config.EARLY_STOPPING_PATIENCE,
+                restore_best_weights=True,
+            )
         )
 
     tracker = EmissionsTracker(
@@ -84,6 +93,7 @@ def train_model(
             train_dataset,
             validation_data=validation_dataset,
             epochs=epochs,
+            callbacks=callbacks,
             verbose=1,
         )
 
@@ -132,12 +142,15 @@ def load_run_configuration(run_id: str) -> dict:
 
 def train_final_model(
     run_id: str,
+    epochs: int,
     model_name: str = config.DEFAULT_MODEL_NAME,
 ):
     """
     Rebuild a selected experiment configuration, train it on the complete
-    predefined training set with carbon tracking, and save the resulting model.
+    development set (training and validation records) with carbon tracking,
+    and save the resulting model.
     """
+
     keras.utils.set_random_seed(config.RANDOM_SEED)
     logger.info("Initializing DagsHub and MLflow tracking...")
     tracking.initialize_mlflow()
@@ -147,7 +160,7 @@ def train_final_model(
     cfg = load_run_configuration(run_id)
 
     df = pd.read_csv(config.ACCEPTED_RECORDS_PATH)
-    full_train_records = df[df["split"] == "train"].copy()
+    full_train_records = df[df["split"].isin(["train", "val"])].copy()
 
     logger.info(f"Building model from configuration for run {run_id}...")
     model = build_model(
@@ -165,11 +178,17 @@ def train_final_model(
     logger.info(f"Training final model on {len(full_train_records)} total training images...")
 
     with tracking.start_run(config.FINAL_MLFLOW_RUN_NAME):
-        tracking.log_params({
+
+        final_params = {
             **cfg,
             "source_run_id": run_id,
+            "source_max_epochs": cfg["epochs"],
+            "final_epochs": epochs,
             "training_records": len(full_train_records),
-        })
+        }
+        final_params.pop("epochs")
+
+        tracking.log_params(final_params)
 
         _, emissions = train_model(
             model=model,
@@ -177,7 +196,7 @@ def train_final_model(
             optimizer=cfg["optimizer"],
             loss=cfg["loss"],
             learning_rate=cfg["learning_rate"],
-            epochs=cfg["epochs"],
+            epochs=epochs,
             batch_size=cfg["batch_size"],
             carbon_project_name=config.CODECARBON_FINAL_TRAINING_PROJECT,
         )
@@ -199,4 +218,7 @@ def train_final_model(
             name="final_model",
         )
 
-    logger.success(f"Final model saved to {out_path}")
+    logger.info(
+        f"Training final model on {len(full_train_records)} total training images "
+        f"for {epochs} epochs..."
+    )

@@ -85,6 +85,11 @@ def train(
         "--run-id",
         help="Selected MLflow run ID",
     ),
+    epochs: int = typer.Option(
+        ...,
+        "--epochs",
+        help="Number of epochs for final training",
+    ),
     model_name: str = typer.Option(
         config.DEFAULT_MODEL_NAME,
         "--model-name",
@@ -93,6 +98,7 @@ def train(
 ):
     train_final_model(
         run_id=run_id,
+        epochs=epochs,
         model_name=model_name,
     )
 

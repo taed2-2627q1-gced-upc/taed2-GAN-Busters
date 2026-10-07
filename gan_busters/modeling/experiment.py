@@ -13,7 +13,6 @@ The predefined CIFAKE test set is never used by this workflow.
 
 from loguru import logger
 import pandas as pd
-from sklearn.model_selection import train_test_split
 import tensorflow as tf
 
 from gan_busters import config
@@ -46,7 +45,7 @@ def run_experiment(
         logger.info("No GPU detected. Training will use CPU.")
 
     # ---------------------------------------------------------
-    # Load predefined training records
+    # Load predefined training and validation records
     # ---------------------------------------------------------
     records = pd.read_csv(config.ACCEPTED_RECORDS_PATH)
 
@@ -54,36 +53,9 @@ def run_experiment(
         records["split"] == "train"
     ].copy()
 
-    # ---------------------------------------------------------
-    # Create reproducible train / validation split
-    # ---------------------------------------------------------
-    if train_records["subclass"].notna().all():
-        stratify_by = (
-            train_records["label"].astype(str)
-            + "_"
-            + train_records["subclass"].astype(str)
-        )
-        stratification = "label_subclass"
-    else:
-        stratify_by = train_records["label"]
-        stratification = "label"
-
-    train_records, validation_records = train_test_split(
-        train_records,
-        test_size=config.DEFAULT_VALIDATION_SIZE,
-        random_state=config.RANDOM_SEED,
-        stratify=stratify_by,
-    )
-
-    config.VALIDATION_RECORDS_PATH.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    validation_records.to_csv(
-        config.VALIDATION_RECORDS_PATH,
-        index=False,
-    )
+    validation_records = records[
+        records["split"] == "val"
+    ].copy()
 
     # ---------------------------------------------------------
     # Build model
@@ -121,9 +93,8 @@ def run_experiment(
         "learning_rate": learning_rate,
         "batch_size": batch_size,
         "epochs": epochs,
-        "validation_size": config.DEFAULT_VALIDATION_SIZE,
+        "early_stopping_patience": config.EARLY_STOPPING_PATIENCE,
         "random_seed": config.RANDOM_SEED,
-        "stratification": stratification,
     }
 
     # ---------------------------------------------------------
@@ -133,6 +104,7 @@ def run_experiment(
         tracking.log_params(params)
 
         logger.info(f"Starting run: {run_name}")
+
         history, emissions = train_model(
             model=model,
             train_records=train_records,
@@ -144,8 +116,18 @@ def run_experiment(
             batch_size=batch_size,
         )
 
+        best_epoch = (
+            history.history["val_loss"].index(
+                min(history.history["val_loss"])
+            )
+            + 1
+        )
+
         tracking.log_history(history)
-        tracking.log_metrics({"emissions_kg_co2": emissions})
+        tracking.log_metrics({
+            "emissions_kg_co2": emissions,
+            "best_epoch": best_epoch,
+        })
 
         metrics = evaluate_model(
             model=model,
@@ -155,4 +137,8 @@ def run_experiment(
         metrics["validation_loss"] = metrics.pop("loss")
 
         tracking.log_metrics(metrics)
-        logger.success(f"Run completed. Validation Macro F1: {metrics['macro_f1']:.4f}")
+        logger.success(
+            f"Run completed. "
+            f"Best epoch: {best_epoch}. "
+            f"Validation Macro F1: {metrics['macro_f1']:.4f}"
+        )
