@@ -8,8 +8,9 @@ This stage:
     - rejects images with contradictory target labels;
     - prevents cross-split data leakage;
     - removes duplicate observations within the same split;
-    - preserves complete predefined train/test splits;
-    - generates a reproducible stratified split when no complete split exists.
+    - preserves complete predefined train/test splits when available;
+    - generates a reproducible stratified train/test split when no complete split exists;
+    - creates a reproducible stratified validation split from the training records.
 
 Input:
     data/interim/inspected_records.csv
@@ -29,7 +30,7 @@ from loguru import logger
 from sklearn.model_selection import train_test_split
 import typer
 
-from gan_busters.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR, RANDOM_SEED
+from gan_busters import config
 
 app = typer.Typer()
 
@@ -117,22 +118,14 @@ def has_complete_split(records: list[dict]) -> bool:
     )
 
 
-
-def assign_train_test_split(
+def assign_split(
     records: list[dict],
-    test_size: float = 0.2,
+    split_size: float,
+    first_split: str,
+    second_split: str,
 ) -> None:
-    
-    """
-    Assign a reproducible stratified train/test split in place.
+    """Assign a reproducible stratified split in place."""
 
-    Stratification always preserves the REAL/FAKE target distribution.
-    When semantic subclass information is available for all records,
-    stratification additionally preserves the joint label/subclass
-    distribution.
-    """
-
-    # Use semantic subclass only when available for every record
     has_subclasses = all(
         record["subclass"] is not None
         for record in records
@@ -149,24 +142,24 @@ def assign_train_test_split(
             for record in records
         ]
 
-    train_records, test_records = train_test_split(
+    first_records, second_records = train_test_split(
         records,
-        test_size=test_size,
-        random_state=RANDOM_SEED,
+        test_size=split_size,
+        random_state=config.RANDOM_SEED,
         stratify=stratify,
     )
 
-    for record in train_records:
-        record["split"] = "train"
+    for record in first_records:
+        record["split"] = first_split
 
-    for record in test_records:
-        record["split"] = "test"
+    for record in second_records:
+        record["split"] = second_split
 
 
 @app.command()
 def main(
-    input_path: Path = INTERIM_DATA_DIR / "inspected_records.csv",
-    output_dir: Path = PROCESSED_DATA_DIR,
+    input_path: Path = config.INTERIM_DATA_DIR / "inspected_records.csv",
+    output_dir: Path = config.PROCESSED_DATA_DIR,
 ):
     records = []
     rejected = []
@@ -236,18 +229,34 @@ def main(
     )
 
     # ---------------------------------------------------------
-    # 4. Generate train/test split when required
+    # 4. Generate train/val/test split when required
     # ---------------------------------------------------------
     if not complete_split:
-        assign_train_test_split(
+        assign_split(
             accepted,
-            test_size=0.2,
+            split_size=config.DEFAULT_TEST_SIZE,
+            first_split="train",
+            second_split="test"
         )
 
         logger.info(
             f"New 80/20 stratified train/test split created "
-            f"using random seed {RANDOM_SEED}."
+            f"using random seed {config.RANDOM_SEED}."
         )
+
+    train_records = [record for record in accepted if record["split"] == "train"]
+
+    assign_split(
+        train_records,
+        split_size=config.DEFAULT_VALIDATION_SIZE,
+        first_split="train",
+        second_split="val"
+    )
+
+    logger.info(
+        f"Training records split into 80/20 train/validation "
+        f"using random seed {config.RANDOM_SEED}."
+    )
 
     # ---------------------------------------------------------
     # 5. Assign final statuses
@@ -266,7 +275,7 @@ def main(
     # ---------------------------------------------------------
     # 7. Write accepted records
     # ---------------------------------------------------------
-    accepted_path = output_dir / "accepted_records.csv"
+    accepted_path = config.ACCEPTED_RECORDS_PATH
 
     accepted_fields = [
         "relative_path",

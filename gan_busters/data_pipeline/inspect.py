@@ -115,7 +115,7 @@ def main(
         rel = path.relative_to(input_dir)
 
         record = {
-            "relative_path": str(rel),
+            "relative_path": rel.as_posix(),
             "split": None,
             "label": None,
             "subclass": None,
