@@ -286,18 +286,17 @@ The project structure is based on the
 template and has been adapted to the needs of this project.
 
 ```text
-├── LICENSE
-├── Makefile
-├── README.md
+├── Makefile                  <- Convenience commands for environment, data, and pipeline automation
+├── README.md                 <- Project overview, quickstart instructions, and developer documentation
 ├── dvc.yaml                  <- DVC pipeline definition
 ├── dvc.lock                  <- Versioned pipeline dependencies and outputs
 │
+├── api
+│   ├── __init__.py           <- Package initialization for the API service
+│   └── app.py                <- FastAPI service and REST endpoints for model inference
+│
 ├── data
-│   ├── dataset_card.md       <- Dataset documentation, provenance, limitations, and usage
-│   ├── external              <- External datasets used for evaluation
-│   ├── interim               <- DVC-managed file inspection results
-│   ├── processed             <- DVC-managed validated dataset records
-│   └── raw                   <- Original CIFAKE data downloaded from source
+│   └── dataset_card.md       <- Dataset documentation, provenance, limitations, and usage
 │
 ├── docs                      <- Project documentation
 │
@@ -305,6 +304,7 @@ template and has been adapted to the needs of this project.
 │   └── model_card.md         <- Model architecture, intended use, evaluation, and limitations
 │
 ├── notebooks                 <- Exploration, validation, and experimentation notebooks
+│   └── 01_data_integrity_analysis.ipynb <- EDA, duplicate inspection, and class balance analysis
 │
 ├── pyproject.toml            <- Project and tool configuration
 │
@@ -320,23 +320,29 @@ template and has been adapted to the needs of this project.
 ├── setup.cfg                 <- Additional project/tool configuration
 │
 └── gan_busters               <- Project source code
-    ├── __init__.py
+    ├── __init__.py           <- Package initialization for the core project module
     ├── config.py             <- Shared paths, defaults, and project configuration
     ├── main.py               <- Central CLI entry point and execution routing
     ├── plots.py              <- Visualization utilities
     │
     ├── data_pipeline
-    │   ├── __init__.py
+    │   ├── __init__.py       <- Package initialization for the data processing pipeline
     │   ├── download.py       <- Download the original CIFAKE dataset
     │   ├── inspect.py        <- File-level inspection and metadata extraction
+    │   ├── corrupt.py        <- Detection and isolation of unreadable, empty, or corrupted image files
+    │   ├── split.py          <- Stratified dataset partitioning preserving class and semantic distributions
     │   └── data_integrity.py <- Duplicate handling, leakage prevention, and dataset splitting
     │
     └── modeling
-        ├── __init__.py
+        ├── __init__.py       <- Package initialization for the modeling pipeline
         ├── architecture.py   <- CNN architecture construction
         ├── experiment.py     <- Training and validation for model selection
         ├── train.py          <- Final model training and model saving
         ├── evaluate.py       <- Evaluation on labelled test datasets
         ├── predict.py        <- Model inference on new images
+        ├── mlflow_smoke_test.py <- Minimal standalone verification for MLflow server connectivity
+        ├── smoke_test.py     <- Verification script for project tracking and DagsHub connection
+        ├── preprocessing.py  <- Channel standardization, embedded Keras preprocessing, and tf.data loading
+        ├── register.py       <- Model registry workflow to push and tag production-ready models in MLflow
         └── tracking.py       <- MLflow and DagsHub experiment tracking utilities
 ```
