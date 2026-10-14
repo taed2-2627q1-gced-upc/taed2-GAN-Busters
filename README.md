@@ -340,8 +340,6 @@ template and has been adapted to the needs of this project.
         ├── train.py          <- Final model training and model saving
         ├── evaluate.py       <- Evaluation on labelled test datasets
         ├── predict.py        <- Model inference on new images
-        ├── mlflow_smoke_test.py <- Minimal standalone verification for MLflow server connectivity
-        ├── smoke_test.py     <- Verification script for project tracking and DagsHub connection
         ├── preprocessing.py  <- Channel standardization, embedded Keras preprocessing, and tf.data loading
         ├── register.py       <- Model registry workflow to push and tag production-ready models in MLflow
         └── tracking.py       <- MLflow and DagsHub experiment tracking utilities
