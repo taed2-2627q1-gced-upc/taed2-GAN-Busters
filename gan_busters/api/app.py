@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from loguru import logger
