@@ -121,6 +121,13 @@ DEFAULT_PREDICTIONS_FILE = "predictions.csv"
 CODECARBON_EXPERIMENT_PROJECT = "CIFAKE_Experiment"
 CODECARBON_FINAL_TRAINING_PROJECT = "Final_Model_Training"
 
+#API Configuration
+MAX_FILES_PER_BATCH = 10
+MAX_FILE_SIZE = 5 * 1024 * 1024
+MAX_BATCH_SIZE = 25 * 1024 * 1024
+MAX_REQUEST_BODY_SIZE = MAX_BATCH_SIZE + 1 * 1024 * 1024
+MAX_IMAGE_DIM = 4096
+
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135
 try:
