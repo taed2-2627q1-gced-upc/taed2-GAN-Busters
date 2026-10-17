@@ -1,4 +1,5 @@
 [core]
-    remote = myremote
-['remote "myremote"']
-    url = gdrive://1shzOuCRaPTDi4qk_pUnk6Sju_Em3FVWF
+    remote = dagshub
+['remote "dagshub"']
+    url = s3://dvc
+    endpointurl = https://dagshub.com/maribelpreite/taed2-GAN-Busters.s3
