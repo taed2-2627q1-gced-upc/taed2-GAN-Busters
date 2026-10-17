@@ -1,10 +1,7 @@
 import kagglehub
 from loguru import logger
 
-from gan_busters.config import RAW_DATA_DIR
-
-DATASET_SLUG = "birdy654/cifake-real-and-ai-generated-synthetic-images/versions/3"
-
+from gan_busters.config import DATASET_SLUG, RAW_DATA_DIR
 
 def main():
     output_dir = RAW_DATA_DIR
