@@ -128,6 +128,25 @@ ROBUSTNESS_NOISE_STD = 0.02
 ROBUSTNESS_MIN_INVARIANCE = 0.95
 ROBUSTNESS_MODEL_VERSION = 1
 
+# External evaluation dataset
+EXTERNAL_DATASET_SLUG = "yangsangtai/tiny-genimage"
+EXTERNAL_SOURCE_DIR = PROJ_ROOT / "data" / "external" / "downloaded"
+EXTERNAL_RAW_DIR = PROJ_ROOT / "data" / "external" / "raw"
+EXTERNAL_RECORDS_PATH = (
+    PROJ_ROOT / "data" / "external" / "processed" / "external_records.csv"
+)
+
+EXTERNAL_GENERATORS = {
+    "imagenet_ai_0419_biggan": "BigGAN",
+    "imagenet_ai_0424_sdv5": "SD_v1_5",
+    "imagenet_midjourney": "Midjourney",
+}
+
+EXTERNAL_LABELS = {
+    "ai": "FAKE",
+    "nature": "REAL",
+}
+
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135
 try:
