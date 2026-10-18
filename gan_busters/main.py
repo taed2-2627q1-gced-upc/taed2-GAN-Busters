@@ -124,6 +124,7 @@ def evaluate(
     evaluate_final_model(
         model_name=model_name,
         threshold=threshold,
+        batch_size=batch_size,
     )
 
 

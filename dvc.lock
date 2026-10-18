@@ -5,50 +5,14 @@ stages:
     deps:
     - path: gan_busters/data_pipeline/download.py
       hash: md5
-      md5: 550a321432d5cfca6a02479875fe2bd7
-      size: 517
+      md5: f6de3a2071e53ab055d2fe9f732c3a7f
+      size: 443
     outs:
     - path: data/raw
       hash: md5
       md5: 76bf9515419c312936952f208e4f860e.dir
       size: 110717853
       nfiles: 120001
-  corrupt_data:
-    cmd: py -m gan_busters.corrupt_data
-    deps:
-    - path: data/raw/cifake
-      hash: md5
-      md5: 368eb180912a1a0a8a728661e983a66a.dir
-      size: 110717853
-      nfiles: 120000
-    - path: gan_busters/corrupt_data.py
-      hash: md5
-      md5: 4cf258e292d6efe94ebe866b5cf5065c
-      size: 4306
-    outs:
-    - path: data/interim/cifake_corrupted
-      hash: md5
-      md5: 8f4d23af806d6558d4574098c4662aef.dir
-      size: 113697684
-      nfiles: 122400
-  build_features:
-    cmd: py -m gan_busters.features
-    deps:
-    - path: data/interim/cifake_corrupted
-      hash: md5
-      md5: 8f4d23af806d6558d4574098c4662aef.dir
-      size: 113697684
-      nfiles: 122400
-    - path: gan_busters/features.py
-      hash: md5
-      md5: e7014e9a5a84de2088a2c4cc2ed4f417
-      size: 2960
-    outs:
-    - path: data/processed/cifake_clean
-      hash: md5
-      md5: 14ec4323c440fea6fb670dcf0ab668d5.dir
-      size: 103407171
-      nfiles: 118231
   inspect_data:
     cmd: python -m gan_busters.data_pipeline.inspect
     deps:
@@ -59,12 +23,12 @@ stages:
       nfiles: 120001
     - path: gan_busters/config.py
       hash: md5
-      md5: 703259a3666dc2a5c140277b3fec9770
-      size: 3360
+      md5: 1f575f07e0df04cfa7d39d9892593417
+      size: 3705
     - path: gan_busters/data_pipeline/inspect.py
       hash: md5
-      md5: bd557a340f0d9348e5d9810cb59b6476
-      size: 5206
+      md5: f3a854481bb20bb331dc06159b5a8144
+      size: 5322
     outs:
     - path: data/interim/inspected_records.csv
       hash: md5
@@ -79,16 +43,16 @@ stages:
       size: 13472948
     - path: gan_busters/config.py
       hash: md5
-      md5: 703259a3666dc2a5c140277b3fec9770
-      size: 3360
+      md5: 1f575f07e0df04cfa7d39d9892593417
+      size: 3705
     - path: gan_busters/data_pipeline/data_integrity.py
       hash: md5
-      md5: 6d60e955c5c85dc01ab2312e9b7fadf9
-      size: 7864
+      md5: 600562154ee2d375acdb2bfc24406d47
+      size: 8199
     - path: gan_busters/data_pipeline/split.py
       hash: md5
-      md5: ae5839590eb10a86098d975ea4e367ae
-      size: 5264
+      md5: 62fa08818cfbd0806642d56744f0faf1
+      size: 6325
     outs:
     - path: data/interim/integrity_records.csv
       hash: md5
@@ -107,12 +71,12 @@ stages:
       size: 12611923
     - path: gan_busters/config.py
       hash: md5
-      md5: 703259a3666dc2a5c140277b3fec9770
-      size: 3360
+      md5: 1f575f07e0df04cfa7d39d9892593417
+      size: 3705
     - path: gan_busters/data_pipeline/split.py
       hash: md5
-      md5: ae5839590eb10a86098d975ea4e367ae
-      size: 5264
+      md5: 62fa08818cfbd0806642d56744f0faf1
+      size: 6325
     outs:
     - path: data/processed/accepted_records.csv
       hash: md5

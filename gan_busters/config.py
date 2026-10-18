@@ -20,6 +20,7 @@ load_dotenv()
 PROJ_ROOT = Path(__file__).resolve().parents[1]
 logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
 
+DATASET_SLUG = "birdy654/cifake-real-and-ai-generated-synthetic-images/versions/3"
 DATA_DIR = PROJ_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 INTERIM_DATA_DIR = DATA_DIR / "interim"
@@ -120,6 +121,12 @@ DEFAULT_PREDICTIONS_FILE = "predictions.csv"
 # Codecarbon
 CODECARBON_EXPERIMENT_PROJECT = "CIFAKE_Experiment"
 CODECARBON_FINAL_TRAINING_PROJECT = "Final_Model_Training"
+
+# Model robustness testing (NFR17)
+ROBUSTNESS_SUBSET_SIZE = 200
+ROBUSTNESS_NOISE_STD = 0.02
+ROBUSTNESS_MIN_INVARIANCE = 0.95
+ROBUSTNESS_MODEL_VERSION = 1
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135

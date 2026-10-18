@@ -30,6 +30,7 @@ def evaluate_model(
     model: keras.Model,
     evaluation_records: pd.DataFrame,
     threshold: float = config.DEFAULT_THRESHOLD,
+    batch_size: int = config.DEFAULT_EVAL_BATCH_SIZE,
 ) -> dict:
     """
     Evaluate a trained model on labelled image records.
@@ -41,9 +42,18 @@ def evaluate_model(
         F1, precision, and recall.
     """
 
+    if evaluation_records.empty:
+        raise ValueError("Evaluation records cannot be empty.")
+
+    if set(evaluation_records["label"]) != {"REAL", "FAKE"}:
+        raise ValueError(
+            "Evaluation requires both REAL and FAKE labels, "
+            "with no additional classes."
+        )
+
     dataset = build_dataset(
         records=evaluation_records,
-        batch_size=config.DEFAULT_EVAL_BATCH_SIZE,
+        batch_size=batch_size,
         shuffle=False,
     )
 
@@ -135,6 +145,7 @@ def evaluate_model(
 def evaluate_final_model(
     model_name: str = config.DEFAULT_MODEL_NAME,
     threshold: float = config.DEFAULT_THRESHOLD,
+    batch_size: int = config.DEFAULT_EVAL_BATCH_SIZE,
 ) -> dict:
     """Evaluate a saved model on the predefined CIFAKE test set."""
 
@@ -159,6 +170,7 @@ def evaluate_final_model(
         model=model,
         evaluation_records=test_records,
         threshold=threshold,
+        batch_size=batch_size,
     )
 
     metrics["test_loss"] = metrics.pop("loss")
@@ -171,6 +183,7 @@ def evaluate_final_model(
         tracking.log_params({
             "model_name": model_name,
             "threshold": threshold,
+            "batch_size": batch_size,
             "test_records": len(test_records),
         })
 
