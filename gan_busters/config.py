@@ -88,6 +88,8 @@ DEFAULT_PADDING = "same"
 DEFAULT_CONV_STRIDES = (1, 1)
 DEFAULT_POOLING = "avg"
 DEFAULT_POOL_SIZE = (2, 2)
+DEFAULT_RESIZE_INTERPOLATION = "bilinear"
+DEFAULT_CROP_TO_ASPECT_RATIO = True
 
 # Default training configuration
 DEFAULT_LOSS = "binary_crossentropy"
@@ -128,24 +130,18 @@ ROBUSTNESS_NOISE_STD = 0.02
 ROBUSTNESS_MIN_INVARIANCE = 0.95
 ROBUSTNESS_MODEL_VERSION = 1
 
-# External evaluation dataset
-EXTERNAL_DATASET_SLUG = "yangsangtai/tiny-genimage"
-EXTERNAL_SOURCE_DIR = PROJ_ROOT / "data" / "external" / "downloaded"
+# External evaluation
 EXTERNAL_RAW_DIR = PROJ_ROOT / "data" / "external" / "raw"
-EXTERNAL_RECORDS_PATH = (
-    PROJ_ROOT / "data" / "external" / "processed" / "external_records.csv"
-)
+EXTERNAL_PROCESSED_DIR = PROJ_ROOT / "data" / "external" / "processed"
+EXTERNAL_RECORDS_PATH = EXTERNAL_PROCESSED_DIR / "external_records.csv"
 
-EXTERNAL_GENERATORS = {
-    "imagenet_ai_0419_biggan": "BigGAN",
-    "imagenet_ai_0424_sdv5": "SD_v1_5",
-    "imagenet_midjourney": "Midjourney",
-}
+EXTERNAL_EVALUATION_MLFLOW_EXPERIMENT = "CIFAKE External Evaluation"
 
-EXTERNAL_LABELS = {
-    "ai": "FAKE",
-    "nature": "REAL",
-}
+EXTERNAL_GENERATORS = [
+    "BigGAN",
+    "SD_v1_5",
+    "Midjourney",
+]
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135
