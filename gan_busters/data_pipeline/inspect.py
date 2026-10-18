@@ -93,7 +93,7 @@ def extract_cifake_subclass(path: Path) -> str | None:
     stem = path.stem
 
     # Filename with an explicit class ID
-    match = re.fullmatch(r"([a-zA-Z0-9]+)\((\d+)\)", stem)
+    match = re.fullmatch(r"([a-zA-Z0-9]+)\s*\((\d+)\)", stem)
     if match:
         return CIFAR10_CLASSES.get(int(match.group(2)))
 

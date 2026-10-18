@@ -83,6 +83,9 @@ def test_inspect_corrupted_image(sample_image):
     "path, expected",
     [
         pytest.param("train/REAL/image(3).jpg", config.CIFAR10_CLASSES[3], id="valid-class"),
+        pytest.param("train/REAL/image (3).jpg", config.CIFAR10_CLASSES[3], id="space-before-suffix"),
+        pytest.param("test/FAKE/101 (2).jpg", config.CIFAR10_CLASSES[2], id="actual-cifake-filename"),
+        pytest.param("train/REAL/image  (3).jpg", config.CIFAR10_CLASSES[3], id="multiple-spaces"),
         pytest.param("train/REAL/image.jpg", config.CIFAR10_CLASSES[1], id="no-suffix-airplane"),
         pytest.param("train/REAL/abc123(3).jpg", config.CIFAR10_CLASSES[3], id="alphanumeric-id"),
         pytest.param("train/REAL/abc_123(3).jpg", None, id="invalid-image-id"),

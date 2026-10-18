@@ -122,6 +122,12 @@ DEFAULT_PREDICTIONS_FILE = "predictions.csv"
 CODECARBON_EXPERIMENT_PROJECT = "CIFAKE_Experiment"
 CODECARBON_FINAL_TRAINING_PROJECT = "Final_Model_Training"
 
+# Model robustness testing (NFR17)
+ROBUSTNESS_SUBSET_SIZE = 200
+ROBUSTNESS_NOISE_STD = 0.02
+ROBUSTNESS_MIN_INVARIANCE = 0.95
+ROBUSTNESS_MODEL_VERSION = 1
+
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135
 try:
