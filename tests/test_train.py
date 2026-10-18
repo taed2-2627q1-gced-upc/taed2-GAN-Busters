@@ -11,8 +11,8 @@ from gan_busters import config
 @pytest.fixture
 def train_setup(sample_image, monkeypatch):
     records = pd.DataFrame({
-        "relative_path": [sample_image.name],
-        "label": ["REAL"],
+        "relative_path": [sample_image.name, sample_image.name],
+        "label": ["REAL", "FAKE"],
     })
 
     monkeypatch.setattr(
@@ -44,6 +44,29 @@ def train_setup(sample_image, monkeypatch):
     }
 
     return kwargs, tracker
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        [],
+        ["REAL", "REAL"],
+        ["FAKE", "FAKE"],
+        ["REAL", "FAKE", "OTHER"],
+        ["REAL", "UNKNOWN"],
+    ],
+)
+def test_train_model_invalid_training_records(train_setup, labels):
+    kwargs, tracker = train_setup
+
+    kwargs["train_records"] = pd.DataFrame({"label": labels})
+
+    with pytest.raises(ValueError):
+        train.train_model(**kwargs)
+
+    # Invalid records should be rejected before training starts.
+    kwargs["model"].fit.assert_not_called()
+    tracker.start.assert_not_called()
 
 
 # check that when there are validation records provided, early stopping is applied and the model knows it applied validation
