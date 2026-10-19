@@ -31,6 +31,7 @@ known-first-party = ["gan_busters"]
 force-sort-within-sections = true
 
 [tool.pytest.ini_options]
+pythonpath = "."
 testpaths = ["tests"]
 markers = [
     "robustness: Model robustness acceptance tests (NFR17)",

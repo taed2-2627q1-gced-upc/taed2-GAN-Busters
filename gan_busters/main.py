@@ -18,7 +18,7 @@ from gan_busters.modeling.experiment import run_experiment
 from gan_busters.modeling.predict import predict_from_path
 from gan_busters.modeling.train import train_final_model
 from gan_busters.modeling.register import register_model
-from gan_busters.modeling.external_evaluation import evaluate_external_model
+from gan_busters.external_evaluation import evaluate_external_model
 
 app = typer.Typer(
     help="GAN-Busters command-line interface."
