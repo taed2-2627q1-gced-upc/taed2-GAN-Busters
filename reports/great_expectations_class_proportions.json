@@ -1,0 +1,572 @@
+{
+  "tolerance": 0.02,
+  "success": true,
+  "n_expectations": 27,
+  "n_failed": 0,
+  "results": [
+    {
+      "check": "records",
+      "expectation": "expect_table_columns_to_match_set",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column_set": [
+          "relative_path",
+          "split",
+          "label",
+          "subclass",
+          "hash"
+        ]
+      },
+      "success": true,
+      "result": {
+        "observed_value": [
+          "hash",
+          "label",
+          "relative_path",
+          "split",
+          "subclass"
+        ]
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_table_row_count_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "min_value": 1
+      },
+      "success": true,
+      "result": {
+        "observed_value": 118664
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "relative_path"
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "split"
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "label"
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "subclass"
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "hash"
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "label",
+        "value_set": [
+          "FAKE",
+          "REAL"
+        ]
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "split",
+        "value_set": [
+          "train",
+          "val",
+          "test"
+        ]
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "subclass",
+        "value_set": [
+          "airplane",
+          "automobile",
+          "bird",
+          "cat",
+          "deer",
+          "dog",
+          "frog",
+          "horse",
+          "ship",
+          "truck"
+        ]
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_distinct_values_to_equal_set",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "subclass",
+        "value_set": [
+          "airplane",
+          "automobile",
+          "bird",
+          "cat",
+          "deer",
+          "dog",
+          "frog",
+          "horse",
+          "ship",
+          "truck"
+        ]
+      },
+      "success": true,
+      "result": {
+        "observed_value": null,
+        "unexpected_count": 0,
+        "missing_count": 0,
+        "partial_unexpected_list": [],
+        "partial_missing_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_distinct_values_to_equal_set",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "split",
+        "value_set": [
+          "train",
+          "val",
+          "test"
+        ]
+      },
+      "success": true,
+      "result": {
+        "observed_value": null,
+        "unexpected_count": 0,
+        "missing_count": 0,
+        "partial_unexpected_list": [],
+        "partial_missing_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_distinct_values_to_equal_set",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "label",
+        "value_set": [
+          "FAKE",
+          "REAL"
+        ]
+      },
+      "success": true,
+      "result": {
+        "observed_value": null,
+        "unexpected_count": 0,
+        "missing_count": 0,
+        "partial_unexpected_list": [],
+        "partial_missing_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_be_unique",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "hash"
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "records",
+      "expectation": "expect_column_values_to_be_unique",
+      "kwargs": {
+        "batch_id": "class_proportions-records",
+        "column": "relative_path"
+      },
+      "success": true,
+      "result": {
+        "element_count": 118664,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "label_by_split",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-label_by_split",
+        "column": "abs_deviation"
+      },
+      "success": true,
+      "result": {
+        "element_count": 6,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "label_by_split",
+      "expectation": "expect_column_values_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-label_by_split",
+        "column": "abs_deviation",
+        "min_value": 0.0,
+        "max_value": 0.02
+      },
+      "success": true,
+      "result": {
+        "element_count": 6,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "label_by_split",
+      "expectation": "expect_column_values_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-label_by_split",
+        "column": "count",
+        "min_value": 1.0
+      },
+      "success": true,
+      "result": {
+        "element_count": 6,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "subclass_by_split",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-subclass_by_split",
+        "column": "abs_deviation"
+      },
+      "success": true,
+      "result": {
+        "element_count": 30,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "subclass_by_split",
+      "expectation": "expect_column_values_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-subclass_by_split",
+        "column": "abs_deviation",
+        "min_value": 0.0,
+        "max_value": 0.02
+      },
+      "success": true,
+      "result": {
+        "element_count": 30,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "subclass_by_split",
+      "expectation": "expect_column_values_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-subclass_by_split",
+        "column": "count",
+        "min_value": 1.0
+      },
+      "success": true,
+      "result": {
+        "element_count": 30,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "label_subclass_by_split",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-label_subclass_by_split",
+        "column": "abs_deviation"
+      },
+      "success": true,
+      "result": {
+        "element_count": 60,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "label_subclass_by_split",
+      "expectation": "expect_column_values_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-label_subclass_by_split",
+        "column": "abs_deviation",
+        "min_value": 0.0,
+        "max_value": 0.02
+      },
+      "success": true,
+      "result": {
+        "element_count": 60,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "label_subclass_by_split",
+      "expectation": "expect_column_values_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-label_subclass_by_split",
+        "column": "count",
+        "min_value": 1.0
+      },
+      "success": true,
+      "result": {
+        "element_count": 60,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "subclass_real_vs_fake",
+      "expectation": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "batch_id": "class_proportions-subclass_real_vs_fake",
+        "column": "abs_deviation"
+      },
+      "success": true,
+      "result": {
+        "element_count": 40,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "subclass_real_vs_fake",
+      "expectation": "expect_column_values_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-subclass_real_vs_fake",
+        "column": "abs_deviation",
+        "min_value": 0.0,
+        "max_value": 0.02
+      },
+      "success": true,
+      "result": {
+        "element_count": 40,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "check": "subclass_real_vs_fake",
+      "expectation": "expect_column_values_to_be_between",
+      "kwargs": {
+        "batch_id": "class_proportions-subclass_real_vs_fake",
+        "column": "count",
+        "min_value": 1.0
+      },
+      "success": true,
+      "result": {
+        "element_count": 40,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    }
+  ]
+}
