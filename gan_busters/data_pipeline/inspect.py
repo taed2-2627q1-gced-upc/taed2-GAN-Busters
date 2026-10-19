@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """
 Inspect the raw image dataset and generate a file-level inventory for
 downstream data integrity checks.
@@ -86,7 +87,6 @@ def inspect_image(path: Path):
     except OSError:
         return "corrupted", file_hash
 
-    
 # currently the semantic classes are encoded in the filenames in between the ( )
 def extract_cifake_subclass(path: Path) -> str | None:
     """Extract the CIFAR-10 semantic class from a CIFAKE filename."""
@@ -109,6 +109,7 @@ def main(
     input_dir: Path = RAW_DATA_DIR,
     output_dir: Path = INTERIM_DATA_DIR,
 ):
+    """Inspect raw images and write a file-level inventory."""
     records = []
 
     for path in tqdm(input_dir.rglob("*"), desc="Inspecting files"):

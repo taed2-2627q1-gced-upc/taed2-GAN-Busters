@@ -13,7 +13,7 @@ The predefined CIFAKE test set is never used by this workflow.
 
 from loguru import logger
 import pandas as pd
-import tensorflow as tf
+import tensorflow as tf  # pylint: disable=import-error
 
 from gan_busters import config
 
@@ -23,7 +23,7 @@ from gan_busters.modeling.evaluate import evaluate_model
 from gan_busters.modeling import tracking
 
 
-def run_experiment(
+def run_experiment(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     run_name: str,
     experiment_name: str = config.DEFAULT_MLFLOW_EXPERIMENT,
     kernel_size: int = config.DEFAULT_KERNEL_SIZE,

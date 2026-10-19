@@ -1,7 +1,7 @@
 """Register the evaluated final model in the MLflow Model Registry."""
 
 from loguru import logger
-import mlflow
+import mlflow  # pylint: disable=import-error
 
 from gan_busters import config
 from gan_busters.modeling import tracking

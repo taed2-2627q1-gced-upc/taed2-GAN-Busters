@@ -15,7 +15,7 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from tensorflow import keras
+from tensorflow import keras  # pylint: disable=import-error
 
 from gan_busters import config
 from gan_busters.modeling.preprocessing import build_dataset

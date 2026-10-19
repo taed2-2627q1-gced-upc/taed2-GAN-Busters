@@ -24,7 +24,7 @@ app = typer.Typer(
 )
 
 @app.command("experiment", help="Run a model-selection experiment.")
-def experiment(
+def experiment(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     experiment_name: str = typer.Option(
     config.DEFAULT_MLFLOW_EXPERIMENT,
     "--experiment-name",
@@ -64,6 +64,7 @@ def experiment(
         help="Dropout",
     ),
 ):
+    """Run a model-selection experiment with the given hyperparameters."""
     run_experiment(
         run_name=run_name,
         experiment_name=experiment_name,
@@ -97,6 +98,7 @@ def train(
         help="Filename for the final trained model",
     ),
 ):
+    """Train the final model on the complete train set using an MLflow run ID."""
     train_final_model(
         run_id=run_id,
         epochs=epochs,
@@ -121,6 +123,7 @@ def evaluate(
         help="Probability threshold used to classify an image as FAKE.",
     ),
 ):
+    """Evaluate the final model on the test split."""
     evaluate_final_model(
         model_name=model_name,
         threshold=threshold,
@@ -164,6 +167,7 @@ def predict(
         help="Name of the CSV file used to save predictions.",
     ),
 ):
+    """Predict on one image or a directory of images."""
     predictions = predict_from_path(
         path=path,
         model_name=model_name,
