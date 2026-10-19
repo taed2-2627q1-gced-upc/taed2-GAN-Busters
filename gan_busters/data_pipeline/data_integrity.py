@@ -113,6 +113,7 @@ def main(
     input_path: Path = config.INTERIM_DATA_DIR / "inspected_records.csv",
     integrity_path: Path = config.INTERIM_DATA_DIR / "integrity_records.csv",
     rejected_path: Path = config.PROCESSED_DATA_DIR / "rejected_records.csv",
+    external_test: bool = False,
 ):
     records = []
     rejected = []
@@ -150,8 +151,14 @@ def main(
     # ---------------------------------------------------------
     splits = {record["split"] for record in records}
 
+    if external_test and splits != {"test"}:
+        raise ValueError(
+            "External evaluation requires all valid images to have split='test'."
+        )
+
     has_predefined_split = (
-        split.has_complete_split(splits)
+        (external_test and splits == {"test"})
+        or split.has_complete_split(splits)
         or split.has_train_test_split(splits)
         or split.has_train_val_split(splits)
     )

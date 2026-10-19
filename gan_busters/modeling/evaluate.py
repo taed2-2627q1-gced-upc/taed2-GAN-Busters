@@ -6,6 +6,8 @@ labelled image records and a workflow for evaluating the final saved model
 on the predefined CIFAKE test set.
 """
 
+from pathlib import Path
+
 import pandas as pd
 from loguru import logger
 
@@ -31,6 +33,8 @@ def evaluate_model(
     evaluation_records: pd.DataFrame,
     threshold: float = config.DEFAULT_THRESHOLD,
     batch_size: int = config.DEFAULT_EVAL_BATCH_SIZE,
+    image_dir: Path = config.RAW_DATA_DIR,
+    resize_before_batch: bool = False,
 ) -> dict:
     """
     Evaluate a trained model on labelled image records.
@@ -55,6 +59,8 @@ def evaluate_model(
         records=evaluation_records,
         batch_size=batch_size,
         shuffle=False,
+        image_dir=image_dir,
+        resize_before_batch=resize_before_batch,
     )
 
     # Ground-truth labels: REAL = 0, FAKE = 1.

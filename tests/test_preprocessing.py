@@ -65,16 +65,18 @@ def test_load_image(sample_image):
     assert image.dtype == tf.uint8
 
 
-def test_build_dataset(sample_image, monkeypatch):
-    monkeypatch.setattr(config, "RAW_DATA_DIR", sample_image.parent)
-
+def test_build_dataset(sample_image):
     # create 2 records with diff labels using the same sample image
     records = pd.DataFrame({
         "relative_path": [sample_image.name, sample_image.name],
         "label": ["REAL", "FAKE"],
     })
 
-    dataset = preprocessing.build_dataset(records, batch_size=2)
+    dataset = preprocessing.build_dataset(
+        records,
+        batch_size=2,
+        image_dir=sample_image.parent,
+    )
 
     images, labels = next(iter(dataset))
 
@@ -87,9 +89,7 @@ def test_build_dataset(sample_image, monkeypatch):
 
 
 # testing that with the current implementation heterogenous images will raise an error at build_Dataset()
-def test_build_dataset_incompatible_shapes(tmp_path, monkeypatch):
-    monkeypatch.setattr(config, "RAW_DATA_DIR", tmp_path)
-
+def test_build_dataset_incompatible_shapes(tmp_path):
     # Create two images with different dimensions
     shapes = [(32, 32, 3), (64, 64, 3)]
     paths = []
@@ -106,7 +106,11 @@ def test_build_dataset_incompatible_shapes(tmp_path, monkeypatch):
         "label": ["REAL", "FAKE"],
     })
 
-    dataset = preprocessing.build_dataset(records, batch_size=2)
+    dataset = preprocessing.build_dataset(
+        records,
+        batch_size=2,
+        image_dir=tmp_path,
+    )
 
     # Batching should fail because image dimensions are incompatible
     with pytest.raises(tf.errors.InvalidArgumentError):

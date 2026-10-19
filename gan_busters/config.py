@@ -88,6 +88,8 @@ DEFAULT_PADDING = "same"
 DEFAULT_CONV_STRIDES = (1, 1)
 DEFAULT_POOLING = "avg"
 DEFAULT_POOL_SIZE = (2, 2)
+DEFAULT_RESIZE_INTERPOLATION = "bilinear"
+DEFAULT_CROP_TO_ASPECT_RATIO = True
 
 # Default training configuration
 DEFAULT_LOSS = "binary_crossentropy"
@@ -127,6 +129,19 @@ ROBUSTNESS_SUBSET_SIZE = 200
 ROBUSTNESS_NOISE_STD = 0.02
 ROBUSTNESS_MIN_INVARIANCE = 0.95
 ROBUSTNESS_MODEL_VERSION = 1
+
+# External evaluation
+EXTERNAL_RAW_DIR = PROJ_ROOT / "data" / "external" / "raw"
+EXTERNAL_PROCESSED_DIR = PROJ_ROOT / "data" / "external" / "processed"
+EXTERNAL_RECORDS_PATH = EXTERNAL_PROCESSED_DIR / "external_records.csv"
+
+EXTERNAL_EVALUATION_MLFLOW_EXPERIMENT = "CIFAKE External Evaluation"
+
+EXTERNAL_GENERATORS = [
+    "BigGAN",
+    "SD_v1_5",
+    "Midjourney",
+]
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135

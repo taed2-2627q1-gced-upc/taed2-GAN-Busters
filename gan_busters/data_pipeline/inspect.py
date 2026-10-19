@@ -34,7 +34,7 @@ from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import typer
 
-from gan_busters.config import CIFAR10_CLASSES, INTERIM_DATA_DIR, RAW_DATA_DIR
+from gan_busters import config
 
 app = typer.Typer()
 
@@ -95,19 +95,21 @@ def extract_cifake_subclass(path: Path) -> str | None:
     # Filename with an explicit class ID
     match = re.fullmatch(r"([a-zA-Z0-9]+)\s*\((\d+)\)", stem)
     if match:
-        return CIFAR10_CLASSES.get(int(match.group(2)))
+        return config.CIFAR10_CLASSES.get(int(match.group(2)))
 
     # Filename without a class ID (airplane)
     if re.fullmatch(r"[a-zA-Z0-9]+", stem):
-        return CIFAR10_CLASSES.get(1)
+        return config.CIFAR10_CLASSES.get(1)
 
     return None
 
 
 @app.command()
 def main(
-    input_dir: Path = RAW_DATA_DIR,
-    output_dir: Path = INTERIM_DATA_DIR,
+    input_dir: Path = config.RAW_DATA_DIR,
+    output_dir: Path = config.INTERIM_DATA_DIR,
+    extract_subclass: bool = True,
+    external_test: bool = False,
 ):
     records = []
 
@@ -138,6 +140,9 @@ def main(
 
         record["split"], record["label"] = parsed
 
+        if external_test:
+            record["split"] = "test"
+
         # Inspect image contents and compute hash
         image_status, file_hash = inspect_image(path)
 
@@ -149,7 +154,8 @@ def main(
             continue
 
         # Extract optional semantic class
-        record["subclass"] = extract_cifake_subclass(path)
+        if extract_subclass:
+            record["subclass"] = extract_cifake_subclass(path)
 
         records.append(record)
 
