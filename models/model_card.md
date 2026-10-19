@@ -56,23 +56,23 @@ This model is a supervised binary image classification component designed to dis
 
 - **CNN architecture:**
   - **Architecture:** 2×Conv2D(32 filters) + Dense(64)
-  - **Kernel size:** `TBD`
-  - **Padding:** `TBD`
-  - **Pooling:** 2×2; operation `TBD`
+  - **Kernel size:** 3
+  - **Padding:** same
+  - **Pooling:** 2×2; operation avg
   - **Convolution stride:** 1
   - **Hidden activation:** ReLU
   - **Output activation:** Sigmoid
 
 - **Training configuration:**
   - **Optimizer:** Adam
-  - **Learning rate:** `TBD`
-  - **Batch size:** `TBD`
-  - **Dropout:** `TBD`
+  - **Learning rate:** 0.001
+  - **Batch size:** 32
+  - **Dropout:** 0.0
   - **Epochs:** 20
 
 - **Developed by:** Maribel Preite, Luis Salinas, Rebeca Torrecilla, Aina Vila
 - **Project:** Advanced Topics in Data Engineering II (TAED2), Universitat Politècnica de Catalunya (UPC)
-- **License:** `TBD`
+- **License:** MIT
 
 ### Model Sources
 
@@ -109,12 +109,11 @@ The model is not intended to provide definitive verification of image authentici
 
 ### Training Data
 
-The model is trained using the official CIFAKE training set containing 100,000 images. This set is further divided into fixed training and validation subsets:
+The model was trained using the official CIFAKE training set, originally containing 100,000 images, further divided into fixed training and validation subsets.
 
-- **Training subset:** 80,000 images (80%), consisting of 40,000 `REAL` and 40,000 `FAKE` images.
-- **Validation subset:** 20,000 images (20%), consisting of 10,000 `REAL` and 10,000 `FAKE` images.
+Before training, the DVC data validation pipeline removed duplicate images across the entire CIFAKE dataset. Within the training subset, 1,039 duplicates were removed, leaving 78,961 images (40,000 REAL and 38,961 FAKE). The validation subset contained 19,741 images (10,000 REAL and 9,741 FAKE) after removing 259 duplicates.
 
-The split preserves both the target and semantic class distributions of the original training set and remains fixed across experiments to ensure consistent model comparison.
+The original split was stratified by target label and semantic class. Although deduplication slightly reduced the number of FAKE images, the class distribution remained approximately balanced, and the overall semantic distribution was largely preserved. The splits remained fixed across experiments to ensure consistent model comparison.
 
 For details about CIFAKE's composition, provenance, semantic classes, and original splits, see the [Dataset Card](../data/dataset_card.md).
 
@@ -184,28 +183,28 @@ The experimental search includes:
 
 Final model performance is evaluated on the official CIFAKE test split, which remains isolated during model development.
 
-The test set contains 20,000 images:
+After deduplication, the test set contains 19,962 images:
 - **`REAL`:** 10,000 images
-- **`FAKE`:** 10,000 images
+- **`FAKE`:** 9,962 images
 
-The ten CIFAR-10 semantic categories are uniformly represented within both classes, with 1,000 images per semantic category.
+The ten CIFAR-10 semantic categories remain approximately balanced across both classes. All REAL categories contain 1,000 images, while the FAKE categories contain between 983 and 1,000 images following deduplication.
 
 For further details about the dataset and its predefined splits, see the [Dataset Card](../data/dataset_card.md).
 
 #### External Evaluation
 
-Additional external datasets may be used exclusively to evaluate model generalization beyond the CIFAKE distribution. These data are not used for training, validation, architecture selection, or hyperparameter tuning.
+External evaluation was conducted using three subsets of [Tiny GenImage](https://www.kaggle.com/datasets/yangsangtai/tiny-genimage): BigGAN, Stable Diffusion v1.5, and Midjourney. Each subset contained 500 REAL and 500 FAKE images, selected from the dataset's validation folders.
 
-External evaluation may include images that differ from CIFAKE in terms of semantic content, original resolution, real image source, or generative model. 
+These datasets were used exclusively to assess generalization beyond CIFAKE, without additional training, validation, architecture selection, or hyperparameter tuning. Images were converted to RGB, center-cropped and resized to 32×32 pixels before inference.
 
 ### Factors
 
-Model performance is evaluated across the following factors:
+The following factors are considered when interpreting model performance across CIFAKE and external evaluation datasets:
 
 - **Semantic class:** Compare performance across the ten CIFAKE semantic classes.
 - **Generative model:** Compare performance on synthetic images produced by generators not represented during training, when suitable external evaluation data are available.
-- **Semantic domain:** Evaluate performance on visual content outside the ten CIFAKE semantic categories, when suitable external evaluation data are available.
-- **Input preprocessing:** Evaluate external images with different original dimensions and aspect ratios to assess the effect of preprocessing to 32×32.
+- **Semantic domain:** Consider differences in visual content between CIFAKE and the external evaluation datasets.
+- **Input preprocessing:** Consider the potential impact of cropping and resizing external images to 32×32 pixels when interpreting performance.
 
 ### Metrics
 
@@ -234,22 +233,32 @@ ROC AUC evaluates the model's ability to distinguish between `REAL` and `FAKE` u
 
 Final performance on the isolated CIFAKE test set:
 
-- **Macro F1:** `TBD`
-- **REAL precision:** `TBD`
-- **REAL recall:** `TBD`
-- **FAKE precision:** `TBD`
-- **FAKE recall:** `TBD`
-- **ROC-AUC:** `TBD`
+- **Macro F1:** 0.9437
+- **REAL precision:** 0.9457
+- **REAL recall:** 0.9418
+- **FAKE precision:** 0.9418
+- **FAKE recall:** 0.9457
+- **ROC-AUC:** 0.9871
 
-Training and validation results from model experimentation, together with hyperparameters, learning curves, and relevant artifacts, are tracked and visualized using MLflow.
+Training and validation results from model experimentation, together with hyperparameters, learning curves, and relevant artifacts, are tracked and visualized using [MLflow](https://dagshub.com/maribelpreite/taed2-GAN-Busters.mlflow/#/experiments).
 
 #### External Evaluation Results
 
-Results from external evaluation datasets will be reported here if additional datasets are used to assess model generalization beyond the CIFAKE distribution.
+The registered model was evaluated independently on three [Tiny GenImage](https://www.kaggle.com/datasets/yangsangtai/tiny-genimage) subsets, each containing 1,000 images (500 `REAL` and 500 `FAKE`).
+
+| Dataset | Macro F1 | ROC-AUC | REAL Recall | FAKE Recall |
+|---|---:|---:|---:|---:|
+| BigGAN | 0.32 | 0.27 | 0.17 | 0.51 |
+| Stable Diffusion v1.5 | 0.50 | 0.74 | 0.18 | 0.97 |
+| Midjourney | 0.42 | 0.48 | 0.17 | 0.79 |
+
+Performance decreased substantially compared with the CIFAKE test set (Macro F1 = 0.94, ROC-AUC = 0.99). The model achieved its highest external performance on Stable Diffusion v1.5, suggesting better transfer to images generated by a related version of the generator used in CIFAKE.
+
+However, `REAL` recall remained consistently low across all three subsets, indicating a strong tendency to classify external images as `FAKE`. These results demonstrate limited generalization beyond CIFAKE. Differences in image sources, semantic content, and preprocessing may contribute to the performance decrease, although their individual effects have not been isolated.
 
 ## Bias, Risks, and Limitations
 
-- **Generator dependency:** CIFAKE synthetic images were generated using [Stable Diffusion v1.4](https://openaccess.thecvf.com/content/CVPR2022/papers/Rombach_High-Resolution_Image_Synthesis_With_Latent_Diffusion_Models_CVPR_2022_paper.pdf). The model may learn artifacts specific to this generator and may not generalize well to images produced by other generative models.
+- **Observed limitations in external generalization:** Evaluation on [Tiny GenImage](https://www.kaggle.com/datasets/yangsangtai/tiny-genimage) showed substantially lower performance than on CIFAKE, with consistently low REAL recall across BigGAN, Stable Diffusion v1.5, and Midjourney. The model therefore cannot be assumed to reliably distinguish authentic and AI-generated images outside the CIFAKE distribution.
 
 - **Limited semantic diversity:** CIFAKE is derived from the ten CIFAR-10 object/semantic classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Performance may decrease for objects or visual content not represented during training.
 
@@ -271,17 +280,17 @@ Datasets with substantial `REAL` / `FAKE` class imbalance should be handled  bef
 
 When semantic class information is available, it should be provided so that generated splits can preserve both target and semantic distributions. Without semantic labels, stratification can only preserve the `REAL` / `FAKE` distribution, and semantic content may remain unevenly distributed across splits and affect model performance.
 
-Before broader use, the model should be evaluated beyond the CIFAKE distribution, including images from different generative models and semantic domains, as well as images with different original resolutions and aspect ratios.
+External evaluation on [Tiny GenImage](https://www.kaggle.com/datasets/yangsangtai/tiny-genimage) revealed substantial generalization limitations. Before broader use, the model should be retrained on more diverse datasets, including images from different real world sources, semantic domains, and generative models, followed by further evaluation to assess improvements in generalization.
 
 ## Environmental Impact
 
-The environmental impact of model training and experimentation is tracked using CodeCarbon.
+The environmental impact of model training was tracked using CodeCarbon. The following measurements correspond to the final model training run.
 
-- **Training hardware:** `TBD`
-- **Compute environment:** `TBD`
-- **Total compute time:** `TBD`
-- **Energy consumed:** `TBD`
-- **Carbon emitted:** `TBD`
+- **Training hardware:** Intel Core i5-14450HX CPU (16 threads), NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM)
+- **Compute environment:** WSL2 (Linux), Python 3.10.22, TensorFlow with CUDA GPU acceleration
+- **Final Training Duration:** 448 seconds (7 min 28 s)
+- **Energy consumed:** 0.002958 kWh (2.96 Wh)
+- **Carbon emitted:** 0.000444 kg CO₂eq (approximately 0.44 g)
 - **Tracking tool:** CodeCarbon
 
 ## Model Card Authors

@@ -286,61 +286,42 @@ The project structure is based on the
 template and has been adapted to the needs of this project.
 
 ```text
-├── Makefile                  <- Convenience commands for environment, data, and pipeline automation
-├── README.md                 <- Project overview, quickstart instructions, and developer documentation
+
+├── README.md                 <- Project overview, setup instructions, and documentation
+├── Makefile                  <- Convenience commands for project automation
+├── pyproject.toml            <- Project and tool configuration
+├── requirements.txt          <- Python dependencies
 ├── dvc.yaml                  <- DVC pipeline definition
 ├── dvc.lock                  <- Versioned pipeline dependencies and outputs
 │
+├── gan_busters               <- Project source code
+│   ├── __init__.py
+│   ├── config.py             <- Shared paths and project configuration
+│   ├── main.py               <- Central CLI entry point
+│   ├── data_pipeline         <- Data preparation, validation, and external dataset processing
+│   └── modeling              <- CNN training, evaluation, inference, and MLflow tracking
+│
 ├── api
-│   ├── __init__.py           <- Package initialization for the API service
-│   └── app.py                <- FastAPI service and REST endpoints for model inference
+│   ├── __init__.py
+│   └── app.py                <- FastAPI inference service
+│
+├── tests                     <- Automated unit and robustness tests
 │
 ├── data
-│   └── dataset_card.md       <- Dataset documentation, provenance, limitations, and usage
-│
-├── docs                      <- Project documentation
+│   └── dataset_card.md       <- Dataset documentation, provenance, and limitations
 │
 ├── models
-│   └── model_card.md         <- Model architecture, intended use, evaluation, and limitations
+│   └── model_card.md         <- Model architecture, evaluation, and limitations
 │
-├── notebooks                 <- Exploration, validation, and experimentation notebooks
-│   └── 01_data_integrity_analysis.ipynb <- EDA, duplicate inspection, and class balance analysis
-│
-├── pyproject.toml            <- Project and tool configuration
-│
-├── references
-│   ├── README.md             <- Centralized datasets, papers, standards, and related work
-│   └── figures               <- Figures used in project documentation
+├── notebooks
+│   └── 01_data_integrity_analysis.ipynb <- Data integrity and distribution analysis
 │
 ├── reports
 │   ├── figures               <- Generated report figures
 │   └── tables                <- Generated report tables
 │
-├── requirements.txt          <- Python dependencies required to reproduce the environment
-├── setup.cfg                 <- Additional project/tool configuration
-│
-└── gan_busters               <- Project source code
-    ├── __init__.py           <- Package initialization for the core project module
-    ├── config.py             <- Shared paths, defaults, and project configuration
-    ├── main.py               <- Central CLI entry point and execution routing
-    ├── plots.py              <- Visualization utilities
-    │
-    ├── data_pipeline
-    │   ├── __init__.py       <- Package initialization for the data processing pipeline
-    │   ├── download.py       <- Download the original CIFAKE dataset
-    │   ├── inspect.py        <- File-level inspection and metadata extraction
-    │   ├── corrupt.py        <- Detection and isolation of unreadable, empty, or corrupted image files
-    │   ├── split.py          <- Stratified dataset partitioning preserving class and semantic distributions
-    │   └── data_integrity.py <- Duplicate handling, leakage prevention, and dataset splitting
-    │
-    └── modeling
-        ├── __init__.py       <- Package initialization for the modeling pipeline
-        ├── architecture.py   <- CNN architecture construction
-        ├── experiment.py     <- Training and validation for model selection
-        ├── train.py          <- Final model training and model saving
-        ├── evaluate.py       <- Evaluation on labelled test datasets
-        ├── predict.py        <- Model inference on new images
-        ├── preprocessing.py  <- Channel standardization, embedded Keras preprocessing, and tf.data loading
-        ├── register.py       <- Model registry workflow to push and tag production-ready models in MLflow
-        └── tracking.py       <- MLflow and DagsHub experiment tracking utilities
+└── references
+    ├── README.md             <- Centralized sources and related work
+    └── figures               <- Figures used in project documentation
+
 ```

@@ -31,14 +31,10 @@ The dataset contains two classes that define image origin: `REAL` and `FAKE`. Th
 
 ### Dataset Sources 
 
-<!-- Provide the basic links for the dataset. -->
-
 - **Dataset:** [CIFAKE on Kaggle](https://www.kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images)
 - **Paper:** [Bird, J. J., & Lotfi, A. (2024). *CIFAKE: Image Classification and Explainable Identification of AI-Generated Synthetic Images*. IEEE Access, 12, 15642–15650.](https://doi.org/10.1109/ACCESS.2024.3356122)
 
 ## Uses
-
-<!-- Address questions around how the dataset is intended to be used. -->
 
 ### Intended Use
 
@@ -52,11 +48,10 @@ In GAN-Busters, CIFAKE is used as the primary dataset for training and evaluatin
 
 GAN-Busters is an educational MLOps project developed for the Advanced Topics in Data Engineering II (TAED2) course at the Universitat Politècnica de Catalunya (UPC). The dataset is used within a reproducible MLOps workflow covering data versioning, experiment tracking, model training, evaluation, and deployment.
 
-Additional external datasets may be used exclusively for evaluating model generalization beyond the CIFAKE distribution, including images from different semantic domains, resolutions, and generative models. Any external datasets used for this purpose will be documented separately, including their source, composition, and role in evaluation.
+To assess generalization beyond CIFAKE, the registered model was additionally evaluated on three subsets of [Tiny GenImage](https://www.kaggle.com/datasets/yangsangtai/tiny-genimage): BigGAN, Stable Diffusion v1.5, and Midjourney. Each subset contained 500 REAL and 500 FAKE images, used exclusively for evaluation without further training or fine-tuning.
 
 ## Dataset Structure
 
-<!-- This section provides a description of the dataset fields, and additional information about the dataset structure such as criteria used to create the splits, relationships between data points, etc. -->
 The CIFAKE dataset contains 120,000 RGB images of 32×32 pixels, divided equally between the `REAL` and `FAKE` classes.
 
 The Kaggle distribution provides two predefined directories:
@@ -113,18 +108,13 @@ Although the second directory is named `test` in the Kaggle distribution, its Ka
 
 ### Curation Rationale
 
-<!-- Motivation for the creation of this dataset. -->
-
 Bird & Lotfi (2024) created CIFAKE in response to the rapid improvement of generative image models, which has made it increasingly difficult for humans to distinguish AI-generated images from real images. The dataset was released as a research resource for the development and testing of computer vision approaches to AI-generated image recognition. 
 
 ### Source Data
 
-<!-- This section describes the source data (e.g. news text and headlines, social media posts, translated sentences, ...). -->
 CIFAKE combines real images from the existing CIFAR-10 dataset with synthetic images generated specifically for CIFAKE. Both groups represent the same ten semantic categories: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck.
 
 #### Data Collection and Processing
-
-<!-- This section describes the data collection and processing process such as data selection criteria, filtering and normalization methods, tools and libraries used, etc. -->
 
 - **`REAL`:** The 60,000 real images originate from the existing [CIFAR-10](https://cave.cs.toronto.edu/kriz/cifar.html) dataset ([Krizhevsky & Hinton, 2009])(https://cave.cs.toronto.edu/kriz/learning-features-2009-TR.pdf). CIFAR-10 consists of 32×32 RGB images distributed across ten semantic classes.
 
@@ -141,13 +131,9 @@ CIFAKE combines real images from the existing CIFAR-10 dataset with synthetic im
 
 #### Personal and Sensitive Information
 
-<!-- State whether the dataset contains data that might be considered personal, sensitive, or private (e.g., data that reveals addresses, uniquely identifiable names or aliases, racial or ethnic origins, sexual orientations, religious beliefs, political opinions, financial or health data, etc.). If efforts were made to anonymize the data, describe the anonymization process. -->
-
 CIFAKE was not created for the collection or analysis of personal or sensitive information. The dataset consists of low-resolution images across the ten CIFAR-10 semantic categories and does not provide personal identifiers or associated personal metadata.
 
 ## Bias, Risks, and Limitations
-
-<!-- This section is meant to convey both technical and sociotechnical limitations. -->
 
 - **Limited generative model diversity:** All `FAKE` images were generated using [Stable Diffusion v1.4](https://openaccess.thecvf.com/content/CVPR2022/papers/Rombach_High-Resolution_Image_Synthesis_With_Latent_Diffusion_Models_CVPR_2022_paper.pdf). Models trained and evaluated exclusively on CIFAKE may therefore learn artifacts specific to this generator rather than features that generalize to images produced by other or newer generative models. As image-generation techniques continue to evolve, performance obtained on CIFAKE may not reflect performance on more recent synthetic images. Bird & Lotfi (2024) identify updating the dataset with images generated by future approaches as an area for future work.
 
@@ -160,8 +146,6 @@ CIFAKE was not created for the collection or analysis of personal or sensitive i
 - **Validation/test split ambiguity:** The predefined `test` directory in the Kaggle distribution is described in its metadata as containing validation data. This makes the intended distinction between validation and final test data unclear. If this split was used for model selection or architecture comparison in the original experiments, the reported performance of the selected models may be optimistic with respect to truly unseen data. 
 
 ### Recommendations
-
-<!-- This section is meant to convey recommendations with respect to the bias, risk, and technical limitations. -->
 
 CIFAKE should primarily be treated as a research and benchmark dataset for studying AI generated image detection. Performance obtained using CIFAKE alone should not be assumed to generalize to real world AI generated images. For real world deployment, models should be validated on more diverse, higher resolution, and more recent datasets covering multiple generative models and image domains. 
 
