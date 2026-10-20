@@ -3,7 +3,7 @@ Inspect the raw image dataset and generate a file-level inventory for
 downstream data integrity checks.
 
 For each discovered file, this stage:
-    - extracts the predefined train/test split when available;
+    - extracts predefined train/validation/test split assignments when available;
     - extracts the REAL/FAKE target label from the directory structure;
     - verifies that the file can be read and decoded as an image;
     - computes a SHA-256 content hash;
@@ -34,16 +34,15 @@ from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import typer
 
-from gan_busters.config import CIFAR10_CLASSES, INTERIM_DATA_DIR, RAW_DATA_DIR
+from gan_busters import config
 
 app = typer.Typer()
 
 
 # extract the split and label info from the directory structure
-def parse_image_path(path: Path, input_dir: Path):
+def parse_image_path(rel_path: Path):
     """Extract and validate the split and label from an image path."""
-    rel = path.relative_to(input_dir)
-    parts = rel.parts # e.g. ("train", "FAKE", "image2.jpg")
+    parts = rel_path.parts # e.g. ("train", "FAKE", "image2.jpg")
 
     # dataset with no split, e.g. REAL/image.jpg or FAKE/image.jpg
     if len(parts) == 2:
@@ -59,7 +58,7 @@ def parse_image_path(path: Path, input_dir: Path):
         split = parts[0].lower()
         label = parts[1].upper()
 
-        if split not in {"train", "test"}:
+        if split not in {"train", "val", "test"}:
             return None
 
         if label not in {"REAL", "FAKE"}:
@@ -72,7 +71,7 @@ def parse_image_path(path: Path, input_dir: Path):
 
 # check if image file can be opened & extract image hash
 def inspect_image(path: Path):
-    """Validate image readability and compute its SHA-256 content hash."""
+    """Validate image readability, compute SHA-256 hash, and extract image metadata."""
     data = path.read_bytes()
     file_hash = hashlib.sha256(data).hexdigest()
 
@@ -91,18 +90,26 @@ def inspect_image(path: Path):
 # currently the semantic classes are encoded in the filenames in between the ( )
 def extract_cifake_subclass(path: Path) -> str | None:
     """Extract the CIFAR-10 semantic class from a CIFAKE filename."""
-    match = re.search(r"\((\d+)\)$", path.stem)
+    stem = path.stem
 
-    # CIFAKE uses no suffix for the first CIFAR-10 class (airplane)
-    class_id = int(match.group(1)) if match else 1
+    # Filename with an explicit class ID
+    match = re.fullmatch(r"([a-zA-Z0-9]+)\s*\((\d+)\)", stem)
+    if match:
+        return config.CIFAR10_CLASSES.get(int(match.group(2)))
 
-    return CIFAR10_CLASSES.get(class_id)
+    # Filename without a class ID (airplane)
+    if re.fullmatch(r"[a-zA-Z0-9]+", stem):
+        return config.CIFAR10_CLASSES.get(1)
+
+    return None
 
 
 @app.command()
 def main(
-    input_dir: Path = RAW_DATA_DIR,
-    output_dir: Path = INTERIM_DATA_DIR,
+    input_dir: Path = config.RAW_DATA_DIR,
+    output_dir: Path = config.INTERIM_DATA_DIR,
+    extract_subclass: bool = True,
+    external_test: bool = False,
 ):
     records = []
 
@@ -124,7 +131,7 @@ def main(
         }
 
         # Inspect directory structure
-        parsed = parse_image_path(path, input_dir)
+        parsed = parse_image_path(rel)
 
         if parsed is None:
             record["status"] = "invalid_path"
@@ -132,6 +139,9 @@ def main(
             continue
 
         record["split"], record["label"] = parsed
+
+        if external_test:
+            record["split"] = "test"
 
         # Inspect image contents and compute hash
         image_status, file_hash = inspect_image(path)
@@ -144,7 +154,8 @@ def main(
             continue
 
         # Extract optional semantic class
-        record["subclass"] = extract_cifake_subclass(path)
+        if extract_subclass:
+            record["subclass"] = extract_cifake_subclass(path)
 
         records.append(record)
 

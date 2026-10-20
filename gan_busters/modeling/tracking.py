@@ -70,9 +70,9 @@ def log_artifact(
         )
 
 
-def log_model(model, name: str = "model"):
+def log_model(model, name=config.FINAL_LOGGED_MODEL_NAME,):
     """Log a trained TensorFlow/Keras model."""
     return mlflow.keras.log_model(
         model=model,
-        name=config.FINAL_LOGGED_MODEL_NAME,
+        name=name,
     )

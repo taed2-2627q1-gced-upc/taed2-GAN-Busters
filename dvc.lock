@@ -13,42 +13,6 @@ stages:
       md5: 76bf9515419c312936952f208e4f860e.dir
       size: 110717853
       nfiles: 120001
-  corrupt_data:
-    cmd: py -m gan_busters.corrupt_data
-    deps:
-    - path: data/raw/cifake
-      hash: md5
-      md5: 368eb180912a1a0a8a728661e983a66a.dir
-      size: 110717853
-      nfiles: 120000
-    - path: gan_busters/corrupt_data.py
-      hash: md5
-      md5: 4cf258e292d6efe94ebe866b5cf5065c
-      size: 4306
-    outs:
-    - path: data/interim/cifake_corrupted
-      hash: md5
-      md5: 8f4d23af806d6558d4574098c4662aef.dir
-      size: 113697684
-      nfiles: 122400
-  build_features:
-    cmd: py -m gan_busters.features
-    deps:
-    - path: data/interim/cifake_corrupted
-      hash: md5
-      md5: 8f4d23af806d6558d4574098c4662aef.dir
-      size: 113697684
-      nfiles: 122400
-    - path: gan_busters/features.py
-      hash: md5
-      md5: e7014e9a5a84de2088a2c4cc2ed4f417
-      size: 2960
-    outs:
-    - path: data/processed/cifake_clean
-      hash: md5
-      md5: 14ec4323c440fea6fb670dcf0ab668d5.dir
-      size: 103407171
-      nfiles: 118231
   inspect_data:
     cmd: python -m gan_busters.data_pipeline.inspect
     deps:
@@ -118,3 +82,165 @@ stages:
       hash: md5
       md5: 8c71df83fd93ff57154f7031869c4d4c
       size: 12572441
+  inspect_external_biggan:
+    cmd: python -m gan_busters.data_pipeline.inspect --input-dir 
+      data/external/raw/BigGAN --output-dir data/external/interim/BigGAN 
+      --no-extract-subclass --external-test
+    deps:
+    - path: data/external/raw/BigGAN
+      hash: md5
+      md5: c2720dcec01c12a2a60a6b023c864684.dir
+      size: 83368617
+      nfiles: 1000
+    - path: gan_busters/config.py
+      hash: md5
+      md5: 62f3ea27a1b96c6c12f23d448e1c3e33
+      size: 4167
+    - path: gan_busters/data_pipeline/inspect.py
+      hash: md5
+      md5: 4cb222c88127dd9320c3b56c05fbc662
+      size: 5473
+    outs:
+    - path: data/external/interim/BigGAN/inspected_records.csv
+      hash: md5
+      md5: e7a7ffba318c62ba2ba2d1299fc0d0a0
+      size: 113048
+  inspect_external_sdv5:
+    cmd: python -m gan_busters.data_pipeline.inspect --input-dir 
+      data/external/raw/SD_v1_5 --output-dir data/external/interim/SD_v1_5 
+      --no-extract-subclass --external-test
+    deps:
+    - path: data/external/raw/SD_v1_5
+      hash: md5
+      md5: ab033f7b62bbcb9aa6459a49ce189889.dir
+      size: 297258744
+      nfiles: 1000
+    - path: gan_busters/config.py
+      hash: md5
+      md5: 62f3ea27a1b96c6c12f23d448e1c3e33
+      size: 4167
+    - path: gan_busters/data_pipeline/inspect.py
+      hash: md5
+      md5: 4cb222c88127dd9320c3b56c05fbc662
+      size: 5473
+    outs:
+    - path: data/external/interim/SD_v1_5/inspected_records.csv
+      hash: md5
+      md5: d7943c15cb9a6cc97ee75ad8bfaa0dbf
+      size: 112048
+  inspect_external_midjourney:
+    cmd: python -m gan_busters.data_pipeline.inspect --input-dir 
+      data/external/raw/Midjourney --output-dir data/external/interim/Midjourney
+      --no-extract-subclass --external-test
+    deps:
+    - path: data/external/raw/Midjourney
+      hash: md5
+      md5: b5ee3bc6ad35f19193a45210dd7087b1.dir
+      size: 695753511
+      nfiles: 1000
+    - path: gan_busters/config.py
+      hash: md5
+      md5: 62f3ea27a1b96c6c12f23d448e1c3e33
+      size: 4167
+    - path: gan_busters/data_pipeline/inspect.py
+      hash: md5
+      md5: 4cb222c88127dd9320c3b56c05fbc662
+      size: 5473
+    outs:
+    - path: data/external/interim/Midjourney/inspected_records.csv
+      hash: md5
+      md5: ae988a34fcf73150924b0ba756dd99a9
+      size: 113833
+  integrity_external_biggan:
+    cmd: python -m gan_busters.data_pipeline.data_integrity --input-path 
+      data/external/interim/BigGAN/inspected_records.csv --integrity-path 
+      data/external/processed/BigGAN/accepted_records.csv --rejected-path 
+      data/external/processed/BigGAN/rejected_records.csv --external-test
+    deps:
+    - path: data/external/interim/BigGAN/inspected_records.csv
+      hash: md5
+      md5: e7a7ffba318c62ba2ba2d1299fc0d0a0
+      size: 113048
+    - path: gan_busters/config.py
+      hash: md5
+      md5: 62f3ea27a1b96c6c12f23d448e1c3e33
+      size: 4167
+    - path: gan_busters/data_pipeline/data_integrity.py
+      hash: md5
+      md5: a753639c2cbcc608331e1e7ac280ca80
+      size: 8453
+    - path: gan_busters/data_pipeline/split.py
+      hash: md5
+      md5: 62fa08818cfbd0806642d56744f0faf1
+      size: 6325
+    outs:
+    - path: data/external/processed/BigGAN/accepted_records.csv
+      hash: md5
+      md5: ec61102768c9da41851aed348182a42f
+      size: 107041
+    - path: data/external/processed/BigGAN/rejected_records.csv
+      hash: md5
+      md5: d4228bc2ba490efceb8ea8302c38a1ee
+      size: 58
+  integrity_external_sdv5:
+    cmd: python -m gan_busters.data_pipeline.data_integrity --input-path 
+      data/external/interim/SD_v1_5/inspected_records.csv --integrity-path 
+      data/external/processed/SD_v1_5/accepted_records.csv --rejected-path 
+      data/external/processed/SD_v1_5/rejected_records.csv --external-test
+    deps:
+    - path: data/external/interim/SD_v1_5/inspected_records.csv
+      hash: md5
+      md5: d7943c15cb9a6cc97ee75ad8bfaa0dbf
+      size: 112048
+    - path: gan_busters/config.py
+      hash: md5
+      md5: 62f3ea27a1b96c6c12f23d448e1c3e33
+      size: 4167
+    - path: gan_busters/data_pipeline/data_integrity.py
+      hash: md5
+      md5: a753639c2cbcc608331e1e7ac280ca80
+      size: 8453
+    - path: gan_busters/data_pipeline/split.py
+      hash: md5
+      md5: 62fa08818cfbd0806642d56744f0faf1
+      size: 6325
+    outs:
+    - path: data/external/processed/SD_v1_5/accepted_records.csv
+      hash: md5
+      md5: dc5ed57555ec4d11f140c99094702bd1
+      size: 106041
+    - path: data/external/processed/SD_v1_5/rejected_records.csv
+      hash: md5
+      md5: d4228bc2ba490efceb8ea8302c38a1ee
+      size: 58
+  integrity_external_midjourney:
+    cmd: python -m gan_busters.data_pipeline.data_integrity --input-path 
+      data/external/interim/Midjourney/inspected_records.csv --integrity-path 
+      data/external/processed/Midjourney/accepted_records.csv --rejected-path 
+      data/external/processed/Midjourney/rejected_records.csv --external-test
+    deps:
+    - path: data/external/interim/Midjourney/inspected_records.csv
+      hash: md5
+      md5: ae988a34fcf73150924b0ba756dd99a9
+      size: 113833
+    - path: gan_busters/config.py
+      hash: md5
+      md5: 62f3ea27a1b96c6c12f23d448e1c3e33
+      size: 4167
+    - path: gan_busters/data_pipeline/data_integrity.py
+      hash: md5
+      md5: a753639c2cbcc608331e1e7ac280ca80
+      size: 8453
+    - path: gan_busters/data_pipeline/split.py
+      hash: md5
+      md5: 62fa08818cfbd0806642d56744f0faf1
+      size: 6325
+    outs:
+    - path: data/external/processed/Midjourney/accepted_records.csv
+      hash: md5
+      md5: 29e0050c307e828f9bdd86de1a3037b3
+      size: 107826
+    - path: data/external/processed/Midjourney/rejected_records.csv
+      hash: md5
+      md5: d4228bc2ba490efceb8ea8302c38a1ee
+      size: 58

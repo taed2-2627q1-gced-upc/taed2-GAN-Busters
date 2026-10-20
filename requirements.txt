@@ -20,6 +20,7 @@ python-dotenv>=1.0.0
 kagglehub>=1.0.0
 mkdocs>=1.6.0
 pillow>=12.3.0
+ipykernel>=7.3.0
 
 #API
 fastapi>=0.142.0
@@ -30,3 +31,4 @@ streamlit>=1.65.0
 # Code Quality & Testing
 ruff>=0.3.0
 pytest>=8.0.0
+pytest-cov>=7.1.0

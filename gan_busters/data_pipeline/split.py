@@ -2,9 +2,10 @@
 Create reproducible train/validation/test splits from integrity-checked records.
 
 This stage:
-    - preserves a complete predefined train/test split when available;
-    - generates a reproducible stratified train/test split when no complete split exists;
-    - creates a reproducible stratified validation split from the training records.
+    - preserves complete predefined train/validation/test splits;
+    - preserves predefined train/test or train/validation splits;
+    - generates missing test or validation sets from training records;
+    - generates reproducible stratified splits when no usable split exists.
 
 Input:
     data/interim/integrity_records.csv
@@ -29,12 +30,16 @@ from gan_busters import config
 app = typer.Typer()
 
 
-def has_complete_split(records: list[dict]) -> bool:
-    """Return True if every record has a predefined train/test split."""
-    return all(
-        record["split"] in {"train", "test"}
-        for record in records
-    )
+def has_complete_split(splits: set) -> bool:
+    return splits == {"train", "val", "test"}
+
+
+def has_train_test_split(splits: set) -> bool:
+    return splits == {"train", "test"}
+
+
+def has_train_val_split(splits: set) -> bool:
+    return splits == {"train", "val"}
 
 
 def assign_split(
@@ -100,14 +105,59 @@ def main(
     )
 
     # ---------------------------------------------------------
-    # 2. Preserve or generate train/test split
+    # 2. Preserve or generate train/val/test splits
     # ---------------------------------------------------------
-    if has_complete_split(records):
+    splits = {record["split"] for record in records}
+
+    if has_complete_split(splits):
         logger.info(
-            "Complete predefined train/test split detected. "
-            "Existing split assignments will be preserved."
+            "Complete predefined train/val/test split detected. "
+            "All assignments preserved."
         )
+
+    elif has_train_test_split(splits):
+        # Preserve test, generate validation from train
+        train_records = [
+            record for record in records
+            if record["split"] == "train"
+        ]
+
+        assign_split(
+            train_records,
+            split_size=config.DEFAULT_VALIDATION_SIZE,
+            first_split="train",
+            second_split="val",
+        )
+
+        logger.info(
+            "Predefined train/test split preserved. "
+            "Validation generated from training records."
+        )
+
+    elif has_train_val_split(splits):
+        # Preserve validation, generate test from train
+        train_records = [
+            record for record in records
+            if record["split"] == "train"
+        ]
+
+        assign_split(
+            train_records,
+            split_size=config.DEFAULT_TEST_SIZE,
+            first_split="train",
+            second_split="test",
+        )
+
+        logger.info(
+            "Predefined train/val split preserved. "
+            "Test generated from training records."
+        )
+
     else:
+        # No usable predefined split: generate all three
+        for record in records:
+            record["split"] = None
+
         assign_split(
             records,
             split_size=config.DEFAULT_TEST_SIZE,
@@ -115,34 +165,25 @@ def main(
             second_split="test",
         )
 
+        train_records = [
+            record for record in records
+            if record["split"] == "train"
+        ]
+
+        assign_split(
+            train_records,
+            split_size=config.DEFAULT_VALIDATION_SIZE,
+            first_split="train",
+            second_split="val",
+        )
+
         logger.info(
-            f"New stratified train/test split created "
-            f"using random seed {config.RANDOM_SEED}."
+            "No usable predefined split. "
+            "New stratified train/val/test splits generated."
         )
 
     # ---------------------------------------------------------
-    # 3. Create validation split from training records
-    # ---------------------------------------------------------
-    train_records = [
-        record
-        for record in records
-        if record["split"] == "train"
-    ]
-
-    assign_split(
-        train_records,
-        split_size=config.DEFAULT_VALIDATION_SIZE,
-        first_split="train",
-        second_split="val",
-    )
-
-    logger.info(
-        f"Training records split into train/validation "
-        f"using random seed {config.RANDOM_SEED}."
-    )
-
-    # ---------------------------------------------------------
-    # 4. Write canonical dataset records
+    # 3. Write canonical dataset records
     # ---------------------------------------------------------
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -165,7 +206,7 @@ def main(
             })
 
     # ---------------------------------------------------------
-    # 5. Final summary
+    # 4. Final summary
     # ---------------------------------------------------------
     train_count = sum(
         record["split"] == "train"

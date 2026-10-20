@@ -142,6 +142,8 @@ def build_dataset(
     records: pd.DataFrame,
     batch_size: int,
     shuffle: bool = False,
+    image_dir: Path = config.RAW_DATA_DIR,
+    resize_before_batch: bool = False,
 ) -> tf.data.Dataset:
     """
     Build a TensorFlow dataset from validated image records.
@@ -151,7 +153,7 @@ def build_dataset(
     """
 
     image_paths = [
-        str(config.RAW_DATA_DIR / Path(relative_path))
+        str(image_dir / Path(relative_path))
         for relative_path in records["relative_path"]
     ]
 
@@ -176,6 +178,24 @@ def build_dataset(
         _load_image,
         num_parallel_calls=tf.data.AUTOTUNE,
     )
+
+    if resize_before_batch:
+        resize = keras.layers.Resizing(
+            height=config.INPUT_SHAPE[0],
+            width=config.INPUT_SHAPE[1],
+            interpolation=config.DEFAULT_RESIZE_INTERPOLATION,
+            crop_to_aspect_ratio=config.DEFAULT_CROP_TO_ASPECT_RATIO,
+        )
+
+        standardize = ChannelStandardization()
+
+        dataset = dataset.map(
+            lambda image, label: (
+                resize(standardize(tf.expand_dims(image, axis=0)))[0],
+                label,
+            ),
+            num_parallel_calls=tf.data.AUTOTUNE,
+        )
 
     dataset = dataset.batch(batch_size)
     dataset = dataset.prefetch(tf.data.AUTOTUNE)

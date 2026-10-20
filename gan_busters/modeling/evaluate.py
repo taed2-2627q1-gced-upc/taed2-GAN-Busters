@@ -6,6 +6,8 @@ labelled image records and a workflow for evaluating the final saved model
 on the predefined CIFAKE test set.
 """
 
+from pathlib import Path
+
 import pandas as pd
 from loguru import logger
 
@@ -30,6 +32,9 @@ def evaluate_model(
     model: keras.Model,
     evaluation_records: pd.DataFrame,
     threshold: float = config.DEFAULT_THRESHOLD,
+    batch_size: int = config.DEFAULT_EVAL_BATCH_SIZE,
+    image_dir: Path = config.RAW_DATA_DIR,
+    resize_before_batch: bool = False,
 ) -> dict:
     """
     Evaluate a trained model on labelled image records.
@@ -41,10 +46,21 @@ def evaluate_model(
         F1, precision, and recall.
     """
 
+    if evaluation_records.empty:
+        raise ValueError("Evaluation records cannot be empty.")
+
+    if set(evaluation_records["label"]) != {"REAL", "FAKE"}:
+        raise ValueError(
+            "Evaluation requires both REAL and FAKE labels, "
+            "with no additional classes."
+        )
+
     dataset = build_dataset(
         records=evaluation_records,
-        batch_size=config.DEFAULT_EVAL_BATCH_SIZE,
+        batch_size=batch_size,
         shuffle=False,
+        image_dir=image_dir,
+        resize_before_batch=resize_before_batch,
     )
 
     # Ground-truth labels: REAL = 0, FAKE = 1.
@@ -135,6 +151,7 @@ def evaluate_model(
 def evaluate_final_model(
     model_name: str = config.DEFAULT_MODEL_NAME,
     threshold: float = config.DEFAULT_THRESHOLD,
+    batch_size: int = config.DEFAULT_EVAL_BATCH_SIZE,
 ) -> dict:
     """Evaluate a saved model on the predefined CIFAKE test set."""
 
@@ -159,6 +176,7 @@ def evaluate_final_model(
         model=model,
         evaluation_records=test_records,
         threshold=threshold,
+        batch_size=batch_size,
     )
 
     metrics["test_loss"] = metrics.pop("loss")
@@ -171,6 +189,7 @@ def evaluate_final_model(
         tracking.log_params({
             "model_name": model_name,
             "threshold": threshold,
+            "batch_size": batch_size,
             "test_records": len(test_records),
         })
 

@@ -37,6 +37,16 @@ def train_model(
     """
     Compile and train a model on the supplied training records.
     """
+
+    if train_records.empty:
+        raise ValueError("Training records cannot be empty.")
+
+    if set(train_records["label"]) != {"REAL", "FAKE"}:
+        raise ValueError(
+            "Training requires both REAL and FAKE labels, "
+            "with no additional classes."
+        )
+    
     if optimizer.lower() == "adam":
         optimizer_instance = keras.optimizers.Adam(
             learning_rate=learning_rate
@@ -67,6 +77,17 @@ def train_model(
     callbacks = []
     
     if validation_records is not None:
+        
+        if validation_records.empty:
+            raise ValueError("Validation records cannot be empty.")
+
+
+        if set(validation_records["label"]) != {"REAL", "FAKE"}:
+            raise ValueError(
+                "Validation requires both REAL and FAKE labels, "
+                "with no additional classes."
+            )
+            
         validation_dataset = build_dataset(
             records=validation_records,
             batch_size=config.DEFAULT_EVAL_BATCH_SIZE,
