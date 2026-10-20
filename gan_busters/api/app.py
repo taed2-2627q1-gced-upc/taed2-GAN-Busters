@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import List
+from typing import List, Annotated
+from pydantic import WithJsonSchema
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from loguru import logger
@@ -10,8 +11,10 @@ import tensorflow as tf
 from tensorflow import keras
 from PIL import Image, UnidentifiedImageError
 from starlette.concurrency import run_in_threadpool
+import mlflow.keras
 
 from gan_busters.modeling.predict import predict_images
+from gan_busters.modeling import tracking
 
 from gan_busters.config import (
     MODELS_DIR, 
@@ -19,7 +22,8 @@ from gan_busters.config import (
     MAX_FILES_PER_BATCH,
     MAX_BATCH_SIZE,
     MAX_FILE_SIZE,
-    MAX_IMAGE_DIM
+    MAX_IMAGE_DIM,
+    REGISTERED_MODEL_NAME
     )
 
 from gan_busters.api.schemas import (
@@ -34,21 +38,30 @@ SUPPORTED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 FORMAT_TO_MIME = {"JPEG": "image/jpeg", "PNG": "image/png"}
 
+CustomUploadFile = Annotated[UploadFile, WithJsonSchema({"type": "string", "format": "binary"})]
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load the previosly trained Keras model during the API startup"""
     global model
     model_path = MODELS_DIR / "gan_busters.keras"
     if not model_path.is_file():
-        logger.error(f"Model file couldn't be found at {model_path}")
-        raise RuntimeError(f"Model file is missing")
-
-    try:
-        model = keras.models.load_model(model_path)
-        logger.info("Loaded GAN-Busters model from {}", model_path)
-    except Exception:
-        logger.exception('Failed to load GAN-Busters model')
-        raise
+        try:
+            tracking.initialize_mlflow()
+            model = mlflow.keras.load_model(
+                model_uri=f"models:/{REGISTERED_MODEL_NAME}/1"
+            )
+            logger.info("Loaded registered model from: {}", REGISTERED_MODEL_NAME)
+        except Exception:
+            logger.exception("Failed to load model from MLflow Model Registry")
+            raise RuntimeError("Model could not be loaded from MLflow.")
+    else:
+        try:
+            model = keras.models.load_model(model_path)
+            logger.info("Loaded GAN-Busters model from {}", model_path)
+        except Exception:
+            logger.exception('Failed to load GAN-Busters model')
+            raise
 
     try:
         yield
@@ -211,7 +224,7 @@ def _validate_and_decode_image(filename: str, content_type: str, content: bytes)
     tags=["Predictions"]
 )
 async def predict_batch(
-    files: List[UploadFile] = File(..., description="List of image files to classify.")
+    files: List[CustomUploadFile] = File(..., description="List of image files to classify.")
 ):
     #Raise code 400 if there are no images uploaded
     if not files:
