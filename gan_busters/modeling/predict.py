@@ -91,7 +91,7 @@ def predict_images(
             else "REAL"
         )
 
-        class_probability = (
+        confidence_score = (
             fake_probability
             if label == "FAKE"
             else 1.0 - fake_probability
@@ -100,7 +100,8 @@ def predict_images(
         predictions.append(
             {
                 "label": label,
-                "class_probability": round(class_probability, 4)
+                "fake_probability": round(fake_probability, 4),
+                "confidence_score": round(confidence_score, 4)
             }
         )
 
