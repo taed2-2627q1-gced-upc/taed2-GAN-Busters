@@ -13,6 +13,14 @@ from PIL import Image, UnidentifiedImageError
 from starlette.concurrency import run_in_threadpool
 import mlflow.keras
 
+from time import perf_counter
+
+from gan_busters.api.metrics import (
+    get_snapshot,
+    record_request,
+    record_batch,
+)
+
 from gan_busters.modeling.predict import predict_images
 from gan_busters.modeling import tracking
 
@@ -77,6 +85,30 @@ app = FastAPI(
     version="1.1.0",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def collect_api_metrics(request, call_next):
+    start = perf_counter()
+    status_code = 500
+
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    finally:
+        duration_ms = (perf_counter() - start) * 1000
+
+        # Exclude the analytics endpoint to avoid it
+        # measuring and reporting itself.
+        if request.url.path != "/analytics/performance":
+            record_request(
+                method=request.method,
+                path=request.url.path,
+                status_code=status_code,
+                duration_ms=duration_ms,
+            )
+
 
 @app.get("/", tags=["General"])
 def root():
@@ -267,6 +299,7 @@ async def predict_batch(
             filenames.append(filename)
 
         try:
+            record_batch(len(decoded_tensors))
             raw_results = await run_in_threadpool(
                 predict_images,
                 model=model,
@@ -313,3 +346,96 @@ async def predict_batch(
     finally:
         for file in files:
             await file.close()
+
+
+@app.get(
+    "/analytics/performance",
+    tags=["Analytics"],
+    summary="API performance and model training statistics",
+)
+def analytics_performance():
+    """Return runtime API metrics and MLflow training information."""
+    from datetime import datetime, timezone
+    from mlflow.tracking import MlflowClient
+
+    performance = get_snapshot()
+
+    mlflow_stats = {
+        "available": False,
+        "experiment_name": "GAN-Busters Final Training",
+        "latest_run": None,
+        "registered_model": None,
+    }
+
+    try:
+        tracking.initialize_mlflow()
+        client = MlflowClient()
+
+        experiment = client.get_experiment_by_name(
+            "GAN-Busters Final Training"
+        )
+
+        if experiment is not None:
+            runs = client.search_runs(
+                experiment_ids=[experiment.experiment_id],
+                order_by=["attributes.start_time DESC"],
+                max_results=1,
+            )
+
+            if runs:
+                run = runs[0]
+                mlflow_stats["latest_run"] = {
+                    "run_id": run.info.run_id,
+                    "status": run.info.status,
+                    "start_time": (
+                        datetime.fromtimestamp(
+                            run.info.start_time / 1000,
+                            tz=timezone.utc,
+                        ).isoformat()
+                        if run.info.start_time else None
+                    ),
+                    "end_time": (
+                        datetime.fromtimestamp(
+                            run.info.end_time / 1000,
+                            tz=timezone.utc,
+                        ).isoformat()
+                        if run.info.end_time else None
+                    ),
+                    "metrics": dict(run.data.metrics),
+                    "params": dict(run.data.params),
+                    "tags": dict(run.data.tags),
+                }
+
+        try:
+            versions = client.search_model_versions(
+                f"name='{REGISTERED_MODEL_NAME}'"
+            )
+            if versions:
+                latest = max(
+                    versions,
+                    key=lambda version: int(version.version),
+                )
+                mlflow_stats["registered_model"] = {
+                    "name": latest.name,
+                    "version": latest.version,
+                    "stage": latest.current_stage,
+                    "status": latest.status,
+                    "run_id": latest.run_id,
+                }
+        except Exception:
+            logger.exception("Could not retrieve model registry metadata")
+
+        mlflow_stats["available"] = True
+
+    except Exception:
+        logger.exception("Could not retrieve MLflow analytics")
+        mlflow_stats["error"] = "MLflow statistics are temporarily unavailable."
+
+    return {
+        "api": performance,
+        "model": {
+            "loaded": model is not None,
+            "threshold": DEFAULT_THRESHOLD,
+            "mlflow": mlflow_stats,
+        },
+    }

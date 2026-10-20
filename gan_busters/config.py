@@ -127,6 +127,7 @@ MAX_FILE_SIZE = 5 * 1024 * 1024
 MAX_BATCH_SIZE = 25 * 1024 * 1024
 MAX_REQUEST_BODY_SIZE = MAX_BATCH_SIZE + 1 * 1024 * 1024
 MAX_IMAGE_DIM = 4096
+GAN_BUSTERS_API_URL="http://127.0.0.1:8000"
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135

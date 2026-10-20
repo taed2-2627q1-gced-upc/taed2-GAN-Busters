@@ -25,6 +25,7 @@ pillow>=12.3.0
 fastapi>=0.142.0
 pydantic>=2.13.0
 python-multipart>=0.0.32
+streamlit>=1.65.0
 
 # Code Quality & Testing
 ruff>=0.3.0
