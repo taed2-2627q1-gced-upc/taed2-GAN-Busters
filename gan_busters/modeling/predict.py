@@ -15,9 +15,9 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import pandas as pd
-import tensorflow as tf
+import tensorflow as tf  # pylint: disable=import-error
 from loguru import logger
-from tensorflow import keras
+from tensorflow import keras  # pylint: disable=import-error
 
 from gan_busters import config
 from gan_busters.modeling.preprocessing import load_image

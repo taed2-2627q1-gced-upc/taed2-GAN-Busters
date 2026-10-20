@@ -8,13 +8,13 @@ All model configuration is provided by the experiment runner. This module
 does not define experiment defaults or training configuration.
 """
 
-from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow import keras  # pylint: disable=import-error
+from tensorflow.keras import layers  # pylint: disable=import-error
 
 from gan_busters.modeling.preprocessing import ChannelStandardization
 from gan_busters import config
 
-def build_model(
+def build_model(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     input_shape: tuple[int, int, int],
     conv_filters: tuple[int, ...],
     kernel_size: int,

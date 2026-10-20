@@ -8,8 +8,8 @@ components applied consistently during training and inference.
 from pathlib import Path
 
 import pandas as pd
-import tensorflow as tf
-from tensorflow import keras
+import tensorflow as tf  # pylint: disable=import-error
+from tensorflow import keras  # pylint: disable=import-error
 
 from gan_busters import config
 
@@ -31,6 +31,7 @@ class ChannelStandardization(keras.layers.Layer):
     """
 
     def call(self, inputs):
+        """Standardize image channels to RGB."""
         inputs = tf.cast(inputs, tf.float32)
 
         # If the channel count is statically known, handle it directly
@@ -105,9 +106,6 @@ class ChannelStandardization(keras.layers.Layer):
         """Declare that the output always contains three channels."""
         return (*input_shape[:-1], 3)
 
-    def get_config(self):
-        """Return layer configuration for serialization."""
-        return super().get_config()
 
 
 # -------------------------------------------------------------------------

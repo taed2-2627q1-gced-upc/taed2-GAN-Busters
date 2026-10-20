@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """
 Create reproducible train/validation/test splits from integrity-checked records.
 
@@ -31,14 +32,17 @@ app = typer.Typer()
 
 
 def has_complete_split(splits: set) -> bool:
+    """Return True if splits contain train, val, and test."""
     return splits == {"train", "val", "test"}
 
 
 def has_train_test_split(splits: set) -> bool:
+    """Return True if splits contain exactly train and test."""
     return splits == {"train", "test"}
 
 
 def has_train_val_split(splits: set) -> bool:
+    """Return True if splits contain exactly train and val."""
     return splits == {"train", "val"}
 
 
@@ -85,6 +89,7 @@ def main(
     input_path: Path = config.INTERIM_DATA_DIR / "integrity_records.csv",
     output_path: Path = config.ACCEPTED_RECORDS_PATH,
 ):
+    """Create reproducible train/validation/test splits."""
     records = []
 
     # ---------------------------------------------------------

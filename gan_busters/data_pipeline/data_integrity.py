@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """
 Apply dataset-level integrity rules to the inspected image records.
 
@@ -32,7 +33,7 @@ from gan_busters.data_pipeline import split
 app = typer.Typer()
 
 
-# handle 3 possible cases of duplicates: 
+# handle 3 possible cases of duplicates:
 # 1. same content, different labels -> drop ALL copies (contradictory labels)
 # 2. Same content and label across splits -> keep the highest-priority copy (test > val > train)
 # 3. same content, same labels, same split -> keep one copy
@@ -48,6 +49,8 @@ def resolve_duplicates(
 
     for record in records:
         by_hash.setdefault(record["hash"], []).append(record)
+
+    split_priority = {"train": 0, "val": 1, "test": 2}
 
     accepted = []
     rejected = []
@@ -69,14 +72,13 @@ def resolve_duplicates(
             continue
 
 
-        # 2. same content and label across splits -> keep the highest-priority copy (test > val > train)
+        # 2. same content and label across splits
+        # -> keep the highest-priority copy (test > val > train)
         if has_predefined_split:
             splits = {record["split"] for record in duplicates}
 
             # Duplicates across different splits: preserve the highest-priority split
             if len(splits) > 1:
-                split_priority = {"train": 0, "val": 1, "test": 2}
-
                 kept = max(
                     duplicates,
                     key=lambda record: split_priority[record["split"]]
@@ -85,9 +87,13 @@ def resolve_duplicates(
                 accepted.append(kept)
 
                 for record in duplicates:
-                    if record is not kept:
-                        record["rejection_reason"] = "cross_split_leakage" if record["split"] != kept["split"] else "duplicate_same_split"
-                        rejected.append(record)
+                    if record is kept:
+                        continue
+                    if record["split"] != kept["split"]:
+                        record["rejection_reason"] = "cross_split_leakage"
+                    else:
+                        record["rejection_reason"] = "duplicate_same_split"
+                    rejected.append(record)
 
                 continue
 
@@ -115,6 +121,7 @@ def main(
     rejected_path: Path = config.PROCESSED_DATA_DIR / "rejected_records.csv",
     external_test: bool = False,
 ):
+    """Run dataset-level integrity checks and write accepted/rejected records."""
     records = []
     rejected = []
 
@@ -183,7 +190,9 @@ def main(
     # ---------------------------------------------------------
     # 3. Resolve duplicates
     # ---------------------------------------------------------
-    integrity_records, duplicate_rejections = resolve_duplicates(records, has_predefined_split=has_predefined_split)
+    integrity_records, duplicate_rejections = resolve_duplicates(
+        records, has_predefined_split=has_predefined_split
+    )
 
     rejected.extend(duplicate_rejections)
 

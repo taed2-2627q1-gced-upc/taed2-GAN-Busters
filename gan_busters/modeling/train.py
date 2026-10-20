@@ -7,11 +7,11 @@ and MLflow configuration recovery.
 
 import ast
 
-from codecarbon import EmissionsTracker
+from codecarbon import EmissionsTracker  # pylint: disable=import-error
 from loguru import logger
-import mlflow
+import mlflow  # pylint: disable=import-error
 import pandas as pd
-from tensorflow import keras
+from tensorflow import keras  # pylint: disable=import-error
 
 from gan_busters import config
 from gan_busters.modeling.architecture import build_model
@@ -23,7 +23,7 @@ from gan_busters.modeling import tracking
 # Reusable training function
 # -------------------------------------------------------------------------
 
-def train_model(
+def train_model(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     model: keras.Model,
     train_records: pd.DataFrame,
     optimizer: str,
@@ -46,7 +46,7 @@ def train_model(
             "Training requires both REAL and FAKE labels, "
             "with no additional classes."
         )
-    
+
     if optimizer.lower() == "adam":
         optimizer_instance = keras.optimizers.Adam(
             learning_rate=learning_rate
@@ -75,9 +75,9 @@ def train_model(
 
     validation_dataset = None
     callbacks = []
-    
+
     if validation_records is not None:
-        
+
         if validation_records.empty:
             raise ValueError("Validation records cannot be empty.")
 
@@ -87,7 +87,7 @@ def train_model(
                 "Validation requires both REAL and FAKE labels, "
                 "with no additional classes."
             )
-            
+
         validation_dataset = build_dataset(
             records=validation_records,
             batch_size=config.DEFAULT_EVAL_BATCH_SIZE,
