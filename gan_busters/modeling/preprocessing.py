@@ -8,14 +8,15 @@ components applied consistently during training and inference.
 from pathlib import Path
 
 import pandas as pd
-import tensorflow as tf  # pylint: disable=import-error
-from tensorflow import keras  # pylint: disable=import-error
+import tensorflow as tf
+from tensorflow import keras
 
 from gan_busters import config
 
 # -------------------------------------------------------------------------
 # Model preprocessing
 # -------------------------------------------------------------------------
+
 
 @keras.utils.register_keras_serializable(package="gan_busters")
 class ChannelStandardization(keras.layers.Layer):
@@ -56,9 +57,7 @@ class ChannelStandardization(keras.layers.Layer):
         # If the channel count is unknown, handle it dynamically.
         channels = tf.shape(inputs)[-1]
 
-        valid_channels = tf.reduce_any(
-            tf.equal(channels, [1, 3, 4])
-        )
+        valid_channels = tf.reduce_any(tf.equal(channels, [1, 3, 4]))
 
         tf.debugging.assert_equal(
             valid_channels,
@@ -107,10 +106,10 @@ class ChannelStandardization(keras.layers.Layer):
         return (*input_shape[:-1], 3)
 
 
-
 # -------------------------------------------------------------------------
 # Dataset construction
 # -------------------------------------------------------------------------
+
 
 def load_image(path: tf.Tensor) -> tf.Tensor:
     """Read and decode one image without applying model preprocessing."""
@@ -151,20 +150,12 @@ def build_dataset(
     """
 
     image_paths = [
-        str(image_dir / Path(relative_path))
-        for relative_path in records["relative_path"]
+        str(image_dir / Path(relative_path)) for relative_path in records["relative_path"]
     ]
 
-    labels = (
-        records["label"]
-        .map(config.LABEL_MAPPING)
-        .astype("float32")
-        .to_numpy()
-    )
+    labels = records["label"].map(config.LABEL_MAPPING).astype("float32").to_numpy()
 
-    dataset = tf.data.Dataset.from_tensor_slices(
-        (image_paths, labels)
-    )
+    dataset = tf.data.Dataset.from_tensor_slices((image_paths, labels))
 
     if shuffle:
         dataset = dataset.shuffle(

@@ -37,9 +37,13 @@ markers = [
     "robustness: Model robustness acceptance tests (NFR17)",
 ]
 
+[tool.pylint.typecheck]
+ignored-modules = ["tensorflow", "tensorflow.keras"]
+generated-members = ["tensorflow.*", "keras.*"]
+
 [tool.coverage.run]
-source=["gan_busters"]
-omit=[
+source = ["gan_busters"]
+omit = [
     "gan_busters/streamlit_app.py",
     "gan_busters/pages/*",
 ]

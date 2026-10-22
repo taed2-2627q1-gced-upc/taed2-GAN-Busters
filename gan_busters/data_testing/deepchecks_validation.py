@@ -51,9 +51,7 @@ def resolve_image_path(relative_path: str) -> Path | None:
     """Resolve a CSV image path against the raw data and project roots."""
     path = Path(relative_path)
     candidates = (
-        [path]
-        if path.is_absolute()
-        else [config.RAW_DATA_DIR / path, config.PROJ_ROOT / path]
+        [path] if path.is_absolute() else [config.RAW_DATA_DIR / path, config.PROJ_ROOT / path]
     )
     for candidate in candidates:
         if candidate.is_file():
@@ -171,6 +169,7 @@ class BatchLoader:
 
 
 def build_vision_data(df: pd.DataFrame, name: str, batch_size: int) -> VisionData:
+    """Create and validate a Deepchecks VisionData object from dataset records."""
     vision_data = VisionData(
         batch_loader=BatchLoader(df, batch_size=batch_size),
         task_type="classification",
@@ -186,6 +185,7 @@ def build_vision_data(df: pd.DataFrame, name: str, batch_size: int) -> VisionDat
 def prepare_dataset(
     records: pd.DataFrame, split: str, sample_size: int, batch_size: int
 ) -> VisionData:
+    """Prepare a stratified dataset sample for Deepchecks validation."""    
     subset = load_split(records, split)
     logger.info(
         "[{}] available: {} records. Class counts: {}",
@@ -207,6 +207,7 @@ def prepare_dataset(
 # Reports
 # ---------------------------------------------------------------------------
 def save_report(result, path: Path) -> Path:
+    """Save a Deepchecks HTML report and verify that it is non-empty."""
     path = Path(path).resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
     logger.info("Saving HTML report to {}", path)

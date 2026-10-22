@@ -1,0 +1,19 @@
+
+Name                          Count
+----                          -----
+import-error                     14
+missing-function-docstring       12
+missing-final-newline            11
+trailing-whitespace               6
+duplicate-code                    5
+too-many-positional-arguments     4
+too-many-arguments                4
+line-too-long                     3
+too-many-locals                   2
+unused-import                     1
+cell-var-from-loop                1
+missing-module-docstring          1
+useless-parent-delegation         1
+
+
+

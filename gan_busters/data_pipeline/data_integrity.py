@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """
 Apply dataset-level integrity rules to the inspected image records.
 
@@ -38,6 +37,7 @@ app = typer.Typer()
 # 2. Same content and label across splits -> keep the highest-priority copy (test > val > train)
 # 3. same content, same labels, same split -> keep one copy
 
+
 def resolve_duplicates(
     records: list[dict],
     has_predefined_split: bool,
@@ -56,7 +56,6 @@ def resolve_duplicates(
     rejected = []
 
     for duplicates in by_hash.values():
-
         # No duplicates
         if len(duplicates) == 1:
             accepted.append(duplicates[0])
@@ -71,7 +70,6 @@ def resolve_duplicates(
                 rejected.append(record)
             continue
 
-
         # 2. same content and label across splits
         # -> keep the highest-priority copy (test > val > train)
         if has_predefined_split:
@@ -79,10 +77,7 @@ def resolve_duplicates(
 
             # Duplicates across different splits: preserve the highest-priority split
             if len(splits) > 1:
-                kept = max(
-                    duplicates,
-                    key=lambda record: split_priority[record["split"]]
-                )
+                kept = max(duplicates, key=lambda record: split_priority[record["split"]])
 
                 accepted.append(kept)
 
@@ -97,7 +92,6 @@ def resolve_duplicates(
 
                 continue
 
-
         # Same image and label within the same split,
         # or dataset has no predefined split -> keep one copy
         kept = duplicates[0]
@@ -105,9 +99,7 @@ def resolve_duplicates(
 
         for record in duplicates[1:]:
             record["rejection_reason"] = (
-                "duplicate_same_split"
-                if has_predefined_split
-                else "duplicate"
+                "duplicate_same_split" if has_predefined_split else "duplicate"
             )
             rejected.append(record)
 
@@ -132,12 +124,8 @@ def main(
         reader = csv.DictReader(f)
 
         for record in reader:
-
             # Convert empty CSV values back to None
-            record = {
-                key: value if value != "" else None
-                for key, value in record.items()
-            }
+            record = {key: value if value != "" else None for key, value in record.items()}
 
             record["rejection_reason"] = None
 
@@ -159,9 +147,7 @@ def main(
     splits = {record["split"] for record in records}
 
     if external_test and splits != {"test"}:
-        raise ValueError(
-            "External evaluation requires all valid images to have split='test'."
-        )
+        raise ValueError("External evaluation requires all valid images to have split='test'.")
 
     has_predefined_split = (
         (external_test and splits == {"test"})
@@ -171,10 +157,7 @@ def main(
     )
 
     if has_predefined_split:
-        logger.info(
-            "Predefined split detected. "
-            "Existing split assignments will be preserved."
-        )
+        logger.info("Predefined split detected. Existing split assignments will be preserved.")
 
     else:
         logger.info(
@@ -225,10 +208,7 @@ def main(
         writer.writeheader()
 
         for record in integrity_records:
-            writer.writerow({
-                field: record[field]
-                for field in integrity_fields
-            })
+            writer.writerow({field: record[field] for field in integrity_fields})
 
     # ---------------------------------------------------------
     # 6. Write rejected records
@@ -248,10 +228,7 @@ def main(
         writer.writeheader()
 
         for record in rejected:
-            writer.writerow({
-                field: record[field]
-                for field in rejected_fields
-            })
+            writer.writerow({field: record[field] for field in rejected_fields})
 
     # ---------------------------------------------------------
     # 7. Final summary

@@ -1,3 +1,4 @@
+"""Provide a Streamlit interface for image classification through the GAN-Busters API."""
 
 import os
 
@@ -7,7 +8,7 @@ import streamlit as st
 
 API_URL = os.getenv(
     "GAN_BUSTERS_API_URL",
-    "http://0.0.0.0:8081",
+    "http://127.0.0.1:8000",
 ).rstrip("/")
 
 st.set_page_config(

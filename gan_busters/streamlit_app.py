@@ -1,4 +1,7 @@
+"""Provide the GAN-Busters homepage and navigation to prediction and statistics pages."""
+
 import os
+
 import streamlit as st
 
 st.set_page_config(
@@ -8,7 +11,7 @@ st.set_page_config(
 
 API_URL = os.getenv(
     "GAN_BUSTERS_API_URL",
-    "http://0.0.0.0:8081",
+    "http://127.0.0.1:8000",
 ).rstrip("/")
 
 st.title("GAN-Busters")

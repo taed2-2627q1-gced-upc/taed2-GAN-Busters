@@ -8,13 +8,14 @@ All model configuration is provided by the experiment runner. This module
 does not define experiment defaults or training configuration.
 """
 
-from tensorflow import keras  # pylint: disable=import-error
-from tensorflow.keras import layers  # pylint: disable=import-error
+from tensorflow import keras
+from tensorflow.keras import layers
 
-from gan_busters.modeling.preprocessing import ChannelStandardization
 from gan_busters import config
+from gan_busters.modeling.preprocessing import ChannelStandardization
 
-def build_model(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+
+def build_model(
     input_shape: tuple[int, int, int],
     conv_filters: tuple[int, ...],
     kernel_size: int,
@@ -79,10 +80,7 @@ def build_model(  # pylint: disable=too-many-arguments,too-many-positional-argum
                 name=f"avg_pool_{i}",
             )(x)
         else:
-            raise ValueError(
-                f"Unsupported pooling type: {pooling}. "
-                "Expected 'max' or 'avg'."
-            )
+            raise ValueError(f"Unsupported pooling type: {pooling}. Expected 'max' or 'avg'.")
 
     # ---------------------------------------------------------
     # Fully connected network
