@@ -1,52 +1,47 @@
+"""Define the FastAPI application for GAN-Busters image classification."""
+
 from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import List, Annotated
-from pydantic import WithJsonSchema
+from time import perf_counter
+from typing import Annotated
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 from loguru import logger
-
+import mlflow.keras
+from PIL import Image, UnidentifiedImageError
+from pydantic import WithJsonSchema
+from starlette.concurrency import run_in_threadpool
 import tensorflow as tf
 from tensorflow import keras
-from PIL import Image, UnidentifiedImageError
-from starlette.concurrency import run_in_threadpool
-import mlflow.keras
-
-from time import perf_counter
 
 from gan_busters.api.metrics import (
     get_snapshot,
-    record_request,
     record_batch,
+    record_request,
 )
-
-from gan_busters.modeling.predict import predict_images
-from gan_busters.modeling import tracking
-
+from gan_busters.api.schemas import BatchPredictionResponse, HTTPErrorDetail, ImagePrediction
 from gan_busters.config import (
-    MODELS_DIR, 
     DEFAULT_THRESHOLD,
-    MAX_FILES_PER_BATCH,
     MAX_BATCH_SIZE,
     MAX_FILE_SIZE,
+    MAX_FILES_PER_BATCH,
     MAX_IMAGE_DIM,
-    REGISTERED_MODEL_NAME
-    )
-
-from gan_busters.api.schemas import (
-    ImagePrediction, 
-    BatchPredictionResponse, 
-    HTTPErrorDetail
+    MODELS_DIR,
+    REGISTERED_MODEL_NAME,
 )
+from gan_busters.modeling import tracking
+from gan_busters.modeling.predict import predict_images
 
 model: keras.Model = None
 
 SUPPORTED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
-FORMAT_TO_MIME = {"JPEG": "image/jpeg", "PNG": "image/png"}
+FORMAT_TO_MIME = {"JPEG": "image/jpeg", "PNG": "image/png", "JPG": "image/jpeg"}
 
 CustomUploadFile = Annotated[UploadFile, WithJsonSchema({"type": "string", "format": "binary"})]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,9 +51,7 @@ async def lifespan(app: FastAPI):
     if not model_path.is_file():
         try:
             tracking.initialize_mlflow()
-            model = mlflow.keras.load_model(
-                model_uri=f"models:/{REGISTERED_MODEL_NAME}/1"
-            )
+            model = mlflow.keras.load_model(model_uri=f"models:/{REGISTERED_MODEL_NAME}/1")
             logger.info("Loaded registered model from: {}", REGISTERED_MODEL_NAME)
         except Exception:
             logger.exception("Failed to load model from MLflow Model Registry")
@@ -68,13 +61,14 @@ async def lifespan(app: FastAPI):
             model = keras.models.load_model(model_path)
             logger.info("Loaded GAN-Busters model from {}", model_path)
         except Exception:
-            logger.exception('Failed to load GAN-Busters model')
+            logger.exception("Failed to load GAN-Busters model")
             raise
 
     try:
         yield
     finally:
         model = None
+
 
 app = FastAPI(
     title="GAN-Busters AI Image Classification API",
@@ -89,6 +83,7 @@ app = FastAPI(
 
 @app.middleware("http")
 async def collect_api_metrics(request, call_next):
+    """Record HTTP request duration and status for API monitoring."""
     start = perf_counter()
     status_code = 500
 
@@ -112,24 +107,29 @@ async def collect_api_metrics(request, call_next):
 
 @app.get("/", tags=["General"])
 def root():
+    """Return the API welcome message."""
     return {"message": "Welcome to the gan-busters app"}
+
 
 @app.get("/health/live", tags=["Health"])
 def liveness():
+    """Confirm that the API process is running."""
     return {"status": "alive"}
 
+
 @app.get(
-        "/health/ready",
-        tags=["Health"],
-        responses={503: {"model": HTTPErrorDetail, "description": "Model is not ready."}}
-        )
+    "/health/ready",
+    tags=["Health"],
+    responses={503: {"model": HTTPErrorDetail, "description": "Model is not ready."}},
+)
 def readiness():
+    """Check whether the classification model is loaded and ready."""
     if model is None:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="The model is not ready"
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="The model is not ready"
         )
     return {"status": "ready", "model_loaded": True}
+
 
 async def _read_limited_file(file: UploadFile, remaining_batch_bytes: int) -> bytes:
     allowed_read = min(MAX_FILE_SIZE, remaining_batch_bytes)
@@ -154,6 +154,7 @@ async def _read_limited_file(file: UploadFile, remaining_batch_bytes: int) -> by
         )
 
     return content
+
 
 def _validate_and_decode_image(filename: str, content_type: str, content: bytes) -> tf.Tensor:
     suffix = Path(filename).suffix.lower()
@@ -213,15 +214,11 @@ def _validate_and_decode_image(filename: str, content_type: str, content: bytes)
             detail=f"Image '{filename}' has invalid dimensions.",
         )
 
-    if (
-        width > MAX_IMAGE_DIM
-        or height > MAX_IMAGE_DIM
-    ):
+    if width > MAX_IMAGE_DIM or height > MAX_IMAGE_DIM:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=(
-                f"Image '{filename}' exceeds the dimension limit "
-                f"({MAX_IMAGE_DIM}x{MAX_IMAGE_DIM})."
+                f"Image '{filename}' exceeds the dimension limit ({MAX_IMAGE_DIM}x{MAX_IMAGE_DIM})."
             ),
         )
 
@@ -240,6 +237,7 @@ def _validate_and_decode_image(filename: str, content_type: str, content: bytes)
             detail=f"Image '{filename}' could not be decoded.",
         ) from exc
 
+
 @app.post(
     "/predict",
     response_model=BatchPredictionResponse,
@@ -248,41 +246,52 @@ def _validate_and_decode_image(filename: str, content_type: str, content: bytes)
     description="Accepts up to 10 JPEG/PNG images, validates format, preprocesses images and returns predictions.",
     responses={
         400: {"model": HTTPErrorDetail, "description": "Empty payload or corrupt image data."},
-        413: {"model": HTTPErrorDetail, "description": "Uploda, batch or image dimensions exceed limits."},
-        415: {"model": HTTPErrorDetail, "description": "Unsupported media format, only " + repr(ALLOWED_EXTENSIONS) + " are allowed."},
+        413: {
+            "model": HTTPErrorDetail,
+            "description": "Uploda, batch or image dimensions exceed limits.",
+        },
+        415: {
+            "model": HTTPErrorDetail,
+            "description": "Unsupported media format, only "
+            + repr(ALLOWED_EXTENSIONS)
+            + " are allowed.",
+        },
         500: {"model": HTTPErrorDetail, "description": "Empty payload or corrupt image data."},
-        503: {"model": HTTPErrorDetail, "description": "Model is not ready."}
+        503: {"model": HTTPErrorDetail, "description": "Model is not ready."},
     },
-    tags=["Predictions"]
+    tags=["Predictions"],
 )
 async def predict_batch(
-    files: List[CustomUploadFile] = File(..., description="List of image files to classify.")
+    files: list[CustomUploadFile] = File(..., description="List of image files to classify."),
 ):
-    #Raise code 400 if there are no images uploaded
+    """Validate uploaded JPEG/PNG images and return REAL/FAKE predictions.
+
+    Reject invalid files or batches exceeding the configured limits.
+    """
+    # Raise code 400 if there are no images uploaded
     if not files:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Payload must contain at least 1 image file.",
         )
 
-    #Raise code 413 if limits exceeded
+    # Raise code 413 if limits exceeded
     if len(files) > MAX_FILES_PER_BATCH:
         raise HTTPException(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-            detail=f"A batch may contain at most {MAX_FILES_PER_BATCH} images."
+            detail=f"A batch may contain at most {MAX_FILES_PER_BATCH} images.",
         )
 
     if model is None:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="The model is not ready."
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="The model is not ready."
         )
 
-    decoded_tensors: List[tf.Tensor] = []
-    filenames: List[str] = []
+    decoded_tensors: list[tf.Tensor] = []
+    filenames: list[str] = []
     total_bytes = 0
 
-    #Analyze each of the images
+    # Analyze each of the images
     try:
         for file in files:
             filename = file.filename or "unnamed"
@@ -291,9 +300,7 @@ async def predict_batch(
             total_bytes += len(content)
 
             image_tensor = _validate_and_decode_image(
-                filename=filename,
-                content_type=file.content_type or "",
-                content=content
+                filename=filename, content_type=file.content_type or "", content=content
             )
             decoded_tensors.append(image_tensor)
             filenames.append(filename)
@@ -310,18 +317,18 @@ async def predict_batch(
             logger.exception("Model inference failed for a batch of {} images", len(files))
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Image inference failed. Try again later."
+                detail="Image inference failed. Try again later.",
             ) from None
 
         if len(raw_results) != len(filenames):
             logger.error(
                 "Inference returned {} results for {} input images.",
                 len(raw_results),
-                len(filenames)
+                len(filenames),
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Server's number of predictions dont match files."
+                detail="Server's number of predictions dont match files.",
             )
 
         try:
@@ -330,7 +337,7 @@ async def predict_batch(
                     filename=filename,
                     label=result["label"],
                     fake_probability=result["fake_probability"],
-                    confidence_score=result["confidence_score"]
+                    confidence_score=result["confidence_score"],
                 )
                 for filename, result in zip(filenames, raw_results)
             ]
@@ -338,7 +345,7 @@ async def predict_batch(
             logger.exception("Inference results don't match the expected response schema")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="The model returned an invalid prediction result."
+                detail="The model returned an invalid prediction result.",
             ) from exc
 
         return BatchPredictionResponse(predictions=predictions)
@@ -356,6 +363,7 @@ async def predict_batch(
 def analytics_performance():
     """Return runtime API metrics and MLflow training information."""
     from datetime import datetime, timezone
+
     from mlflow.tracking import MlflowClient
 
     performance = get_snapshot()
@@ -371,9 +379,7 @@ def analytics_performance():
         tracking.initialize_mlflow()
         client = MlflowClient()
 
-        experiment = client.get_experiment_by_name(
-            "GAN-Busters Final Training"
-        )
+        experiment = client.get_experiment_by_name("GAN-Busters Final Training")
 
         if experiment is not None:
             runs = client.search_runs(
@@ -392,14 +398,16 @@ def analytics_performance():
                             run.info.start_time / 1000,
                             tz=timezone.utc,
                         ).isoformat()
-                        if run.info.start_time else None
+                        if run.info.start_time
+                        else None
                     ),
                     "end_time": (
                         datetime.fromtimestamp(
                             run.info.end_time / 1000,
                             tz=timezone.utc,
                         ).isoformat()
-                        if run.info.end_time else None
+                        if run.info.end_time
+                        else None
                     ),
                     "metrics": dict(run.data.metrics),
                     "params": dict(run.data.params),
@@ -407,9 +415,7 @@ def analytics_performance():
                 }
 
         try:
-            versions = client.search_model_versions(
-                f"name='{REGISTERED_MODEL_NAME}'"
-            )
+            versions = client.search_model_versions(f"name='{REGISTERED_MODEL_NAME}'")
             if versions:
                 latest = max(
                     versions,
@@ -439,3 +445,7 @@ def analytics_performance():
             "mlflow": mlflow_stats,
         },
     }
+
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)
