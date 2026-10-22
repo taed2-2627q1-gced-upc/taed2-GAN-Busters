@@ -107,9 +107,11 @@ def test_evaluate_model_batch_size(evaluation_setup, monkeypatch):
         records=records,
         batch_size=1,
         shuffle=False,
+        image_dir=config.RAW_DATA_DIR,
+        resize_before_batch=False,
     )
 
-    
+
 def test_evaluate_final_model(monkeypatch, tmp_path):
     models_dir = tmp_path / "models"
     models_dir.mkdir()

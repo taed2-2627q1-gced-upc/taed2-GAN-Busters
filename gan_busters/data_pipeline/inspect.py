@@ -34,7 +34,7 @@ from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import typer
 
-from gan_busters.config import CIFAR10_CLASSES, INTERIM_DATA_DIR, RAW_DATA_DIR
+from gan_busters import config
 
 app = typer.Typer()
 
@@ -42,7 +42,7 @@ app = typer.Typer()
 # extract the split and label info from the directory structure
 def parse_image_path(rel_path: Path):
     """Extract and validate the split and label from an image path."""
-    parts = rel_path.parts # e.g. ("train", "FAKE", "image2.jpg")
+    parts = rel_path.parts  # e.g. ("train", "FAKE", "image2.jpg")
 
     # dataset with no split, e.g. REAL/image.jpg or FAKE/image.jpg
     if len(parts) == 2:
@@ -81,12 +81,12 @@ def inspect_image(path: Path):
         return "valid", file_hash
 
     except UnidentifiedImageError:
-        return "not_image", file_hash # the file is not a valid image format like jpg or png
+        return "not_image", file_hash  # the file is not a valid image format like jpg or png
 
     except OSError:
         return "corrupted", file_hash
 
-    
+
 # currently the semantic classes are encoded in the filenames in between the ( )
 def extract_cifake_subclass(path: Path) -> str | None:
     """Extract the CIFAR-10 semantic class from a CIFAKE filename."""
@@ -95,24 +95,26 @@ def extract_cifake_subclass(path: Path) -> str | None:
     # Filename with an explicit class ID
     match = re.fullmatch(r"([a-zA-Z0-9]+)\s*\((\d+)\)", stem)
     if match:
-        return CIFAR10_CLASSES.get(int(match.group(2)))
+        return config.CIFAR10_CLASSES.get(int(match.group(2)))
 
     # Filename without a class ID (airplane)
     if re.fullmatch(r"[a-zA-Z0-9]+", stem):
-        return CIFAR10_CLASSES.get(1)
+        return config.CIFAR10_CLASSES.get(1)
 
     return None
 
 
 @app.command()
 def main(
-    input_dir: Path = RAW_DATA_DIR,
-    output_dir: Path = INTERIM_DATA_DIR,
+    input_dir: Path = config.RAW_DATA_DIR,
+    output_dir: Path = config.INTERIM_DATA_DIR,
+    extract_subclass: bool = True,
+    external_test: bool = False,
 ):
+    """Inspect raw images and write a file-level inventory."""
     records = []
 
     for path in tqdm(input_dir.rglob("*"), desc="Inspecting files"):
-
         # Ignore directories and KaggleHub metadata
         if not path.is_file() or ".complete" in path.parts:
             continue
@@ -138,6 +140,9 @@ def main(
 
         record["split"], record["label"] = parsed
 
+        if external_test:
+            record["split"] = "test"
+
         # Inspect image contents and compute hash
         image_status, file_hash = inspect_image(path)
 
@@ -149,10 +154,10 @@ def main(
             continue
 
         # Extract optional semantic class
-        record["subclass"] = extract_cifake_subclass(path)
+        if extract_subclass:
+            record["subclass"] = extract_cifake_subclass(path)
 
         records.append(record)
-
 
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -173,10 +178,7 @@ def main(
         writer.writeheader()
         writer.writerows(records)
 
-    valid_count = sum(
-        record["status"] == "valid"
-        for record in records
-    )
+    valid_count = sum(record["status"] == "valid" for record in records)
 
     logger.success(
         f"Inspection complete: "

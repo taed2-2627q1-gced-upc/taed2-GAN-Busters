@@ -26,19 +26,21 @@ import typer
 
 from gan_busters import config
 
-
 app = typer.Typer()
 
 
 def has_complete_split(splits: set) -> bool:
+    """Return True if splits contain train, val, and test."""
     return splits == {"train", "val", "test"}
 
 
 def has_train_test_split(splits: set) -> bool:
+    """Return True if splits contain exactly train and test."""
     return splits == {"train", "test"}
 
 
 def has_train_val_split(splits: set) -> bool:
+    """Return True if splits contain exactly train and val."""
     return splits == {"train", "val"}
 
 
@@ -50,21 +52,12 @@ def assign_split(
 ) -> None:
     """Assign a reproducible stratified split in place."""
 
-    has_subclasses = all(
-        record["subclass"] is not None
-        for record in records
-    )
+    has_subclasses = all(record["subclass"] is not None for record in records)
 
     if has_subclasses:
-        stratify = [
-            f"{record['label']}::{record['subclass']}"
-            for record in records
-        ]
+        stratify = [f"{record['label']}::{record['subclass']}" for record in records]
     else:
-        stratify = [
-            record["label"]
-            for record in records
-        ]
+        stratify = [record["label"] for record in records]
 
     first_records, second_records = train_test_split(
         records,
@@ -85,6 +78,7 @@ def main(
     input_path: Path = config.INTERIM_DATA_DIR / "integrity_records.csv",
     output_path: Path = config.ACCEPTED_RECORDS_PATH,
 ):
+    """Create reproducible train/validation/test splits."""
     records = []
 
     # ---------------------------------------------------------
@@ -94,15 +88,10 @@ def main(
         reader = csv.DictReader(f)
 
         for record in reader:
-            record = {
-                key: value if value != "" else None
-                for key, value in record.items()
-            }
+            record = {key: value if value != "" else None for key, value in record.items()}
             records.append(record)
 
-    logger.info(
-        f"Loaded {len(records)} integrity-checked records."
-    )
+    logger.info(f"Loaded {len(records)} integrity-checked records.")
 
     # ---------------------------------------------------------
     # 2. Preserve or generate train/val/test splits
@@ -111,16 +100,12 @@ def main(
 
     if has_complete_split(splits):
         logger.info(
-            "Complete predefined train/val/test split detected. "
-            "All assignments preserved."
+            "Complete predefined train/val/test split detected. All assignments preserved."
         )
 
     elif has_train_test_split(splits):
         # Preserve test, generate validation from train
-        train_records = [
-            record for record in records
-            if record["split"] == "train"
-        ]
+        train_records = [record for record in records if record["split"] == "train"]
 
         assign_split(
             train_records,
@@ -130,16 +115,12 @@ def main(
         )
 
         logger.info(
-            "Predefined train/test split preserved. "
-            "Validation generated from training records."
+            "Predefined train/test split preserved. Validation generated from training records."
         )
 
     elif has_train_val_split(splits):
         # Preserve validation, generate test from train
-        train_records = [
-            record for record in records
-            if record["split"] == "train"
-        ]
+        train_records = [record for record in records if record["split"] == "train"]
 
         assign_split(
             train_records,
@@ -148,10 +129,7 @@ def main(
             second_split="test",
         )
 
-        logger.info(
-            "Predefined train/val split preserved. "
-            "Test generated from training records."
-        )
+        logger.info("Predefined train/val split preserved. Test generated from training records.")
 
     else:
         # No usable predefined split: generate all three
@@ -165,10 +143,7 @@ def main(
             second_split="test",
         )
 
-        train_records = [
-            record for record in records
-            if record["split"] == "train"
-        ]
+        train_records = [record for record in records if record["split"] == "train"]
 
         assign_split(
             train_records,
@@ -177,10 +152,7 @@ def main(
             second_split="val",
         )
 
-        logger.info(
-            "No usable predefined split. "
-            "New stratified train/val/test splits generated."
-        )
+        logger.info("No usable predefined split. New stratified train/val/test splits generated.")
 
     # ---------------------------------------------------------
     # 3. Write canonical dataset records
@@ -200,26 +172,14 @@ def main(
         writer.writeheader()
 
         for record in records:
-            writer.writerow({
-                field: record[field]
-                for field in fields
-            })
+            writer.writerow({field: record[field] for field in fields})
 
     # ---------------------------------------------------------
     # 4. Final summary
     # ---------------------------------------------------------
-    train_count = sum(
-        record["split"] == "train"
-        for record in records
-    )
-    val_count = sum(
-        record["split"] == "val"
-        for record in records
-    )
-    test_count = sum(
-        record["split"] == "test"
-        for record in records
-    )
+    train_count = sum(record["split"] == "train" for record in records)
+    val_count = sum(record["split"] == "val" for record in records)
+    test_count = sum(record["split"] == "test" for record in records)
 
     logger.success(
         f"Dataset split complete: "

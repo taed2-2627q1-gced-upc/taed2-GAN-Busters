@@ -16,11 +16,10 @@ import pandas as pd
 import tensorflow as tf
 
 from gan_busters import config
-
-from gan_busters.modeling.architecture import build_model
-from gan_busters.modeling.train import train_model
-from gan_busters.modeling.evaluate import evaluate_model
 from gan_busters.modeling import tracking
+from gan_busters.modeling.architecture import build_model
+from gan_busters.modeling.evaluate import evaluate_model
+from gan_busters.modeling.train import train_model
 
 
 def run_experiment(
@@ -49,13 +48,9 @@ def run_experiment(
     # ---------------------------------------------------------
     records = pd.read_csv(config.ACCEPTED_RECORDS_PATH)
 
-    train_records = records[
-        records["split"] == "train"
-    ].copy()
+    train_records = records[records["split"] == "train"].copy()
 
-    validation_records = records[
-        records["split"] == "val"
-    ].copy()
+    validation_records = records[records["split"] == "val"].copy()
 
     # ---------------------------------------------------------
     # Build model
@@ -116,18 +111,15 @@ def run_experiment(
             batch_size=batch_size,
         )
 
-        best_epoch = (
-            history.history["val_loss"].index(
-                min(history.history["val_loss"])
-            )
-            + 1
-        )
+        best_epoch = history.history["val_loss"].index(min(history.history["val_loss"])) + 1
 
         tracking.log_history(history)
-        tracking.log_metrics({
-            "emissions_kg_co2": emissions,
-            "best_epoch": best_epoch,
-        })
+        tracking.log_metrics(
+            {
+                "emissions_kg_co2": emissions,
+                "best_epoch": best_epoch,
+            }
+        )
 
         metrics = evaluate_model(
             model=model,

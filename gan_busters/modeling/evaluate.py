@@ -6,9 +6,10 @@ labelled image records and a workflow for evaluating the final saved model
 on the predefined CIFAKE test set.
 """
 
-import pandas as pd
-from loguru import logger
+from pathlib import Path
 
+from loguru import logger
+import pandas as pd
 from sklearn.metrics import (
     f1_score,
     precision_score,
@@ -18,19 +19,21 @@ from sklearn.metrics import (
 from tensorflow import keras
 
 from gan_busters import config
-from gan_busters.modeling.preprocessing import build_dataset
 from gan_busters.modeling import tracking
-
+from gan_busters.modeling.preprocessing import build_dataset
 
 # -------------------------------------------------------------------------
 # Reusable evaluation function
 # -------------------------------------------------------------------------
+
 
 def evaluate_model(
     model: keras.Model,
     evaluation_records: pd.DataFrame,
     threshold: float = config.DEFAULT_THRESHOLD,
     batch_size: int = config.DEFAULT_EVAL_BATCH_SIZE,
+    image_dir: Path = config.RAW_DATA_DIR,
+    resize_before_batch: bool = False,
 ) -> dict:
     """
     Evaluate a trained model on labelled image records.
@@ -47,23 +50,19 @@ def evaluate_model(
 
     if set(evaluation_records["label"]) != {"REAL", "FAKE"}:
         raise ValueError(
-            "Evaluation requires both REAL and FAKE labels, "
-            "with no additional classes."
+            "Evaluation requires both REAL and FAKE labels, with no additional classes."
         )
 
     dataset = build_dataset(
         records=evaluation_records,
         batch_size=batch_size,
         shuffle=False,
+        image_dir=image_dir,
+        resize_before_batch=resize_before_batch,
     )
 
     # Ground-truth labels: REAL = 0, FAKE = 1.
-    y_true = (
-        evaluation_records["label"]
-        .map(config.LABEL_MAPPING)
-        .astype(int)
-        .to_numpy()
-    )
+    y_true = evaluation_records["label"].map(config.LABEL_MAPPING).astype(int).to_numpy()
 
     # Predict P(FAKE).
     probabilities = model.predict(
@@ -82,7 +81,6 @@ def evaluate_model(
 
     metrics = {
         "loss": float(loss),
-
         # Overall metrics
         "macro_f1": f1_score(
             y_true,
@@ -93,7 +91,6 @@ def evaluate_model(
             y_true,
             probabilities,
         ),
-
         # REAL = 0
         "real_f1": f1_score(
             y_true,
@@ -113,7 +110,6 @@ def evaluate_model(
             pos_label=0,
             zero_division=0,
         ),
-
         # FAKE = 1
         "fake_f1": f1_score(
             y_true,
@@ -142,6 +138,7 @@ def evaluate_model(
 # Final-evaluation workflow
 # -------------------------------------------------------------------------
 
+
 def evaluate_final_model(
     model_name: str = config.DEFAULT_MODEL_NAME,
     threshold: float = config.DEFAULT_THRESHOLD,
@@ -152,9 +149,7 @@ def evaluate_final_model(
     model_path = config.MODELS_DIR / model_name
 
     if not model_path.exists():
-        raise FileNotFoundError(
-            f"Saved model not found: {model_path}"
-        )
+        raise FileNotFoundError(f"Saved model not found: {model_path}")
 
     # Load the complete model, including embedded preprocessing.
     model = keras.models.load_model(model_path)
@@ -162,9 +157,7 @@ def evaluate_final_model(
     # Load accepted records and isolate the untouched CIFAKE test set.
     records = pd.read_csv(config.ACCEPTED_RECORDS_PATH)
 
-    test_records = records[
-        records["split"] == "test"
-    ].copy()
+    test_records = records[records["split"] == "test"].copy()
 
     metrics = evaluate_model(
         model=model,
@@ -180,12 +173,14 @@ def evaluate_final_model(
     tracking.set_experiment(config.FINAL_EVALUATION_MLFLOW_EXPERIMENT)
 
     with tracking.start_run(config.FINAL_EVALUATION_MLFLOW_RUN_NAME):
-        tracking.log_params({
-            "model_name": model_name,
-            "threshold": threshold,
-            "batch_size": batch_size,
-            "test_records": len(test_records),
-        })
+        tracking.log_params(
+            {
+                "model_name": model_name,
+                "threshold": threshold,
+                "batch_size": batch_size,
+                "test_records": len(test_records),
+            }
+        )
 
         tracking.log_metrics(metrics)
 

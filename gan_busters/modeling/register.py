@@ -22,24 +22,18 @@ def register_model(run_id: str) -> None:
     final_models = [
         model
         for model in logged_models
-        if (
-            model.name == config.FINAL_LOGGED_MODEL_NAME
-            and model.source_run_id == run_id
-        )
+        if (model.name == config.FINAL_LOGGED_MODEL_NAME and model.source_run_id == run_id)
     ]
 
     if not final_models:
         raise ValueError(
-            f"No logged model named "
-            f"'{config.FINAL_LOGGED_MODEL_NAME}' "
-            f"found for run {run_id}."
+            f"No logged model named '{config.FINAL_LOGGED_MODEL_NAME}' found for run {run_id}."
         )
 
     logged_model = final_models[0]
 
     logger.info(
-        f"Registering logged model {logged_model.model_id} "
-        f"as '{config.REGISTERED_MODEL_NAME}'..."
+        f"Registering logged model {logged_model.model_id} as '{config.REGISTERED_MODEL_NAME}'..."
     )
 
     model_version = mlflow.register_model(
@@ -48,6 +42,5 @@ def register_model(run_id: str) -> None:
     )
 
     logger.success(
-        f"Model registered as '{config.REGISTERED_MODEL_NAME}' "
-        f"version {model_version.version}."
+        f"Model registered as '{config.REGISTERED_MODEL_NAME}' version {model_version.version}."
     )

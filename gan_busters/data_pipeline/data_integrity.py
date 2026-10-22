@@ -32,10 +32,11 @@ from gan_busters.data_pipeline import split
 app = typer.Typer()
 
 
-# handle 3 possible cases of duplicates: 
+# handle 3 possible cases of duplicates:
 # 1. same content, different labels -> drop ALL copies (contradictory labels)
 # 2. Same content and label across splits -> keep the highest-priority copy (test > val > train)
 # 3. same content, same labels, same split -> keep one copy
+
 
 def resolve_duplicates(
     records: list[dict],
@@ -49,11 +50,12 @@ def resolve_duplicates(
     for record in records:
         by_hash.setdefault(record["hash"], []).append(record)
 
+    split_priority = {"train": 0, "val": 1, "test": 2}
+
     accepted = []
     rejected = []
 
     for duplicates in by_hash.values():
-
         # No duplicates
         if len(duplicates) == 1:
             accepted.append(duplicates[0])
@@ -68,29 +70,27 @@ def resolve_duplicates(
                 rejected.append(record)
             continue
 
-
-        # 2. same content and label across splits -> keep the highest-priority copy (test > val > train)
+        # 2. same content and label across splits
+        # -> keep the highest-priority copy (test > val > train)
         if has_predefined_split:
             splits = {record["split"] for record in duplicates}
 
             # Duplicates across different splits: preserve the highest-priority split
             if len(splits) > 1:
-                split_priority = {"train": 0, "val": 1, "test": 2}
-
-                kept = max(
-                    duplicates,
-                    key=lambda record: split_priority[record["split"]]
-                )
+                kept = max(duplicates, key=lambda record: split_priority[record["split"]])
 
                 accepted.append(kept)
 
                 for record in duplicates:
-                    if record is not kept:
-                        record["rejection_reason"] = "cross_split_leakage" if record["split"] != kept["split"] else "duplicate_same_split"
-                        rejected.append(record)
+                    if record is kept:
+                        continue
+                    if record["split"] != kept["split"]:
+                        record["rejection_reason"] = "cross_split_leakage"
+                    else:
+                        record["rejection_reason"] = "duplicate_same_split"
+                    rejected.append(record)
 
                 continue
-
 
         # Same image and label within the same split,
         # or dataset has no predefined split -> keep one copy
@@ -99,9 +99,7 @@ def resolve_duplicates(
 
         for record in duplicates[1:]:
             record["rejection_reason"] = (
-                "duplicate_same_split"
-                if has_predefined_split
-                else "duplicate"
+                "duplicate_same_split" if has_predefined_split else "duplicate"
             )
             rejected.append(record)
 
@@ -113,7 +111,9 @@ def main(
     input_path: Path = config.INTERIM_DATA_DIR / "inspected_records.csv",
     integrity_path: Path = config.INTERIM_DATA_DIR / "integrity_records.csv",
     rejected_path: Path = config.PROCESSED_DATA_DIR / "rejected_records.csv",
+    external_test: bool = False,
 ):
+    """Run dataset-level integrity checks and write accepted/rejected records."""
     records = []
     rejected = []
 
@@ -124,12 +124,8 @@ def main(
         reader = csv.DictReader(f)
 
         for record in reader:
-
             # Convert empty CSV values back to None
-            record = {
-                key: value if value != "" else None
-                for key, value in record.items()
-            }
+            record = {key: value if value != "" else None for key, value in record.items()}
 
             record["rejection_reason"] = None
 
@@ -150,17 +146,18 @@ def main(
     # ---------------------------------------------------------
     splits = {record["split"] for record in records}
 
+    if external_test and splits != {"test"}:
+        raise ValueError("External evaluation requires all valid images to have split='test'.")
+
     has_predefined_split = (
-        split.has_complete_split(splits)
+        (external_test and splits == {"test"})
+        or split.has_complete_split(splits)
         or split.has_train_test_split(splits)
         or split.has_train_val_split(splits)
     )
 
     if has_predefined_split:
-        logger.info(
-            "Predefined split detected. "
-            "Existing split assignments will be preserved."
-        )
+        logger.info("Predefined split detected. Existing split assignments will be preserved.")
 
     else:
         logger.info(
@@ -176,7 +173,9 @@ def main(
     # ---------------------------------------------------------
     # 3. Resolve duplicates
     # ---------------------------------------------------------
-    integrity_records, duplicate_rejections = resolve_duplicates(records, has_predefined_split=has_predefined_split)
+    integrity_records, duplicate_rejections = resolve_duplicates(
+        records, has_predefined_split=has_predefined_split
+    )
 
     rejected.extend(duplicate_rejections)
 
@@ -209,10 +208,7 @@ def main(
         writer.writeheader()
 
         for record in integrity_records:
-            writer.writerow({
-                field: record[field]
-                for field in integrity_fields
-            })
+            writer.writerow({field: record[field] for field in integrity_fields})
 
     # ---------------------------------------------------------
     # 6. Write rejected records
@@ -232,10 +228,7 @@ def main(
         writer.writeheader()
 
         for record in rejected:
-            writer.writerow({
-                field: record[field]
-                for field in rejected_fields
-            })
+            writer.writerow({field: record[field] for field in rejected_fields})
 
     # ---------------------------------------------------------
     # 7. Final summary

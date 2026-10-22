@@ -7,9 +7,8 @@ tracking server and provides reusable functions for experiment tracking.
 
 from pathlib import Path
 
-import dagshub
-import mlflow
 from loguru import logger
+import mlflow
 
 from gan_busters import config
 
@@ -70,7 +69,10 @@ def log_artifact(
         )
 
 
-def log_model(model, name=config.FINAL_LOGGED_MODEL_NAME,):
+def log_model(
+    model,
+    name=config.FINAL_LOGGED_MODEL_NAME,
+):
     """Log a trained TensorFlow/Keras model."""
     return mlflow.keras.log_model(
         model=model,

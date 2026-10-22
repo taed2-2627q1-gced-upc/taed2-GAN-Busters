@@ -9,26 +9,27 @@ Usage:
 """
 
 from pathlib import Path
-import typer
+
 from loguru import logger
+import typer
 
 from gan_busters import config
+from gan_busters.external_evaluation import evaluate_external_model
 from gan_busters.modeling.evaluate import evaluate_final_model
 from gan_busters.modeling.experiment import run_experiment
 from gan_busters.modeling.predict import predict_from_path
-from gan_busters.modeling.train import train_final_model
 from gan_busters.modeling.register import register_model
+from gan_busters.modeling.train import train_final_model
 
-app = typer.Typer(
-    help="GAN-Busters command-line interface."
-)
+app = typer.Typer(help="GAN-Busters command-line interface.")
+
 
 @app.command("experiment", help="Run a model-selection experiment.")
 def experiment(
     experiment_name: str = typer.Option(
-    config.DEFAULT_MLFLOW_EXPERIMENT,
-    "--experiment-name",
-    help="MLflow experiment name",
+        config.DEFAULT_MLFLOW_EXPERIMENT,
+        "--experiment-name",
+        help="MLflow experiment name",
     ),
     run_name: str = typer.Option(
         ...,
@@ -64,6 +65,7 @@ def experiment(
         help="Dropout",
     ),
 ):
+    """Run a model-selection experiment with the given hyperparameters."""
     run_experiment(
         run_name=run_name,
         experiment_name=experiment_name,
@@ -74,7 +76,8 @@ def experiment(
         padding=padding,
         pooling=pooling,
         dropout=dropout,
-)
+    )
+
 
 @app.command(
     "train",
@@ -97,11 +100,13 @@ def train(
         help="Filename for the final trained model",
     ),
 ):
+    """Train the final model on the complete train set using an MLflow run ID."""
     train_final_model(
         run_id=run_id,
         epochs=epochs,
         model_name=model_name,
     )
+
 
 @app.command("evaluate", help="Evaluate final model on test split")
 def evaluate(
@@ -121,6 +126,7 @@ def evaluate(
         help="Probability threshold used to classify an image as FAKE.",
     ),
 ):
+    """Evaluate the final model on the test split."""
     evaluate_final_model(
         model_name=model_name,
         threshold=threshold,
@@ -164,6 +170,7 @@ def predict(
         help="Name of the CSV file used to save predictions.",
     ),
 ):
+    """Predict on one image or a directory of images."""
     predictions = predict_from_path(
         path=path,
         model_name=model_name,
@@ -171,10 +178,15 @@ def predict(
         output_file=output_file,
     )
 
-    logger.info(
-        f"Saved {len(predictions)} predictions to "
-        f"{config.PREDICTIONS_DIR / output_file}"
-    )
+    logger.info(f"Saved {len(predictions)} predictions to {config.PREDICTIONS_DIR / output_file}")
+
+
+@app.command(
+    "evaluate-external", help="Evaluate the registered model on Tiny GenImage external datasets."
+)
+def evaluate_external():
+    """Evaluate the registered model on Tiny GenImage."""
+    evaluate_external_model()
 
 
 if __name__ == "__main__":

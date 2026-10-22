@@ -11,6 +11,7 @@ does not define experiment defaults or training configuration.
 from tensorflow import keras
 from tensorflow.keras import layers
 
+from gan_busters import config
 from gan_busters.modeling.preprocessing import ChannelStandardization
 
 
@@ -45,8 +46,8 @@ def build_model(
     x = layers.Resizing(
         height=input_shape[0],
         width=input_shape[1],
-        interpolation="bilinear",
-        crop_to_aspect_ratio=True,
+        interpolation=config.DEFAULT_RESIZE_INTERPOLATION,
+        crop_to_aspect_ratio=config.DEFAULT_CROP_TO_ASPECT_RATIO,
         name="resize",
     )(x)
 
@@ -79,10 +80,7 @@ def build_model(
                 name=f"avg_pool_{i}",
             )(x)
         else:
-            raise ValueError(
-                f"Unsupported pooling type: {pooling}. "
-                "Expected 'max' or 'avg'."
-            )
+            raise ValueError(f"Unsupported pooling type: {pooling}. Expected 'max' or 'avg'.")
 
     # ---------------------------------------------------------
     # Fully connected network

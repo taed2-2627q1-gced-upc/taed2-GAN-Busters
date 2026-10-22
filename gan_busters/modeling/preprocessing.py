@@ -17,6 +17,7 @@ from gan_busters import config
 # Model preprocessing
 # -------------------------------------------------------------------------
 
+
 @keras.utils.register_keras_serializable(package="gan_busters")
 class ChannelStandardization(keras.layers.Layer):
     """
@@ -31,6 +32,7 @@ class ChannelStandardization(keras.layers.Layer):
     """
 
     def call(self, inputs):
+        """Standardize image channels to RGB."""
         inputs = tf.cast(inputs, tf.float32)
 
         # If the channel count is statically known, handle it directly
@@ -55,9 +57,7 @@ class ChannelStandardization(keras.layers.Layer):
         # If the channel count is unknown, handle it dynamically.
         channels = tf.shape(inputs)[-1]
 
-        valid_channels = tf.reduce_any(
-            tf.equal(channels, [1, 3, 4])
-        )
+        valid_channels = tf.reduce_any(tf.equal(channels, [1, 3, 4]))
 
         tf.debugging.assert_equal(
             valid_channels,
@@ -105,14 +105,11 @@ class ChannelStandardization(keras.layers.Layer):
         """Declare that the output always contains three channels."""
         return (*input_shape[:-1], 3)
 
-    def get_config(self):
-        """Return layer configuration for serialization."""
-        return super().get_config()
-
 
 # -------------------------------------------------------------------------
 # Dataset construction
 # -------------------------------------------------------------------------
+
 
 def load_image(path: tf.Tensor) -> tf.Tensor:
     """Read and decode one image without applying model preprocessing."""
@@ -142,6 +139,8 @@ def build_dataset(
     records: pd.DataFrame,
     batch_size: int,
     shuffle: bool = False,
+    image_dir: Path = config.RAW_DATA_DIR,
+    resize_before_batch: bool = False,
 ) -> tf.data.Dataset:
     """
     Build a TensorFlow dataset from validated image records.
@@ -151,20 +150,12 @@ def build_dataset(
     """
 
     image_paths = [
-        str(config.RAW_DATA_DIR / Path(relative_path))
-        for relative_path in records["relative_path"]
+        str(image_dir / Path(relative_path)) for relative_path in records["relative_path"]
     ]
 
-    labels = (
-        records["label"]
-        .map(config.LABEL_MAPPING)
-        .astype("float32")
-        .to_numpy()
-    )
+    labels = records["label"].map(config.LABEL_MAPPING).astype("float32").to_numpy()
 
-    dataset = tf.data.Dataset.from_tensor_slices(
-        (image_paths, labels)
-    )
+    dataset = tf.data.Dataset.from_tensor_slices((image_paths, labels))
 
     if shuffle:
         dataset = dataset.shuffle(
@@ -176,6 +167,24 @@ def build_dataset(
         _load_image,
         num_parallel_calls=tf.data.AUTOTUNE,
     )
+
+    if resize_before_batch:
+        resize = keras.layers.Resizing(
+            height=config.INPUT_SHAPE[0],
+            width=config.INPUT_SHAPE[1],
+            interpolation=config.DEFAULT_RESIZE_INTERPOLATION,
+            crop_to_aspect_ratio=config.DEFAULT_CROP_TO_ASPECT_RATIO,
+        )
+
+        standardize = ChannelStandardization()
+
+        dataset = dataset.map(
+            lambda image, label: (
+                resize(standardize(tf.expand_dims(image, axis=0)))[0],
+                label,
+            ),
+            num_parallel_calls=tf.data.AUTOTUNE,
+        )
 
     dataset = dataset.batch(batch_size)
     dataset = dataset.prefetch(tf.data.AUTOTUNE)

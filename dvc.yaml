@@ -16,6 +16,33 @@ stages:
     outs:
       - data/interim/inspected_records.csv
 
+  inspect_external_biggan:
+    cmd: python -m gan_busters.data_pipeline.inspect --input-dir data/external/raw/BigGAN --output-dir data/external/interim/BigGAN --no-extract-subclass --external-test
+    deps:
+      - data/external/raw/BigGAN
+      - gan_busters/data_pipeline/inspect.py
+      - gan_busters/config.py
+    outs:
+      - data/external/interim/BigGAN/inspected_records.csv
+
+  inspect_external_sdv5:
+    cmd: python -m gan_busters.data_pipeline.inspect --input-dir data/external/raw/SD_v1_5 --output-dir data/external/interim/SD_v1_5 --no-extract-subclass --external-test
+    deps:
+      - data/external/raw/SD_v1_5
+      - gan_busters/data_pipeline/inspect.py
+      - gan_busters/config.py
+    outs:
+      - data/external/interim/SD_v1_5/inspected_records.csv
+
+  inspect_external_midjourney:
+    cmd: python -m gan_busters.data_pipeline.inspect --input-dir data/external/raw/Midjourney --output-dir data/external/interim/Midjourney --no-extract-subclass --external-test
+    deps:
+      - data/external/raw/Midjourney
+      - gan_busters/data_pipeline/inspect.py
+      - gan_busters/config.py
+    outs:
+      - data/external/interim/Midjourney/inspected_records.csv
+
   data_integrity:
     cmd: python -m gan_busters.data_pipeline.data_integrity
     deps:
@@ -26,6 +53,39 @@ stages:
     outs:
       - data/interim/integrity_records.csv
       - data/processed/rejected_records.csv
+
+  integrity_external_biggan:
+    cmd: python -m gan_busters.data_pipeline.data_integrity --input-path data/external/interim/BigGAN/inspected_records.csv --integrity-path data/external/processed/BigGAN/accepted_records.csv --rejected-path data/external/processed/BigGAN/rejected_records.csv --external-test
+    deps:
+      - data/external/interim/BigGAN/inspected_records.csv
+      - gan_busters/data_pipeline/data_integrity.py
+      - gan_busters/data_pipeline/split.py
+      - gan_busters/config.py
+    outs:
+      - data/external/processed/BigGAN/accepted_records.csv
+      - data/external/processed/BigGAN/rejected_records.csv
+
+  integrity_external_sdv5:
+    cmd: python -m gan_busters.data_pipeline.data_integrity --input-path data/external/interim/SD_v1_5/inspected_records.csv --integrity-path data/external/processed/SD_v1_5/accepted_records.csv --rejected-path data/external/processed/SD_v1_5/rejected_records.csv --external-test
+    deps:
+      - data/external/interim/SD_v1_5/inspected_records.csv
+      - gan_busters/data_pipeline/data_integrity.py
+      - gan_busters/data_pipeline/split.py
+      - gan_busters/config.py
+    outs:
+      - data/external/processed/SD_v1_5/accepted_records.csv
+      - data/external/processed/SD_v1_5/rejected_records.csv
+
+  integrity_external_midjourney:
+    cmd: python -m gan_busters.data_pipeline.data_integrity --input-path data/external/interim/Midjourney/inspected_records.csv --integrity-path data/external/processed/Midjourney/accepted_records.csv --rejected-path data/external/processed/Midjourney/rejected_records.csv --external-test
+    deps:
+      - data/external/interim/Midjourney/inspected_records.csv
+      - gan_busters/data_pipeline/data_integrity.py
+      - gan_busters/data_pipeline/split.py
+      - gan_busters/config.py
+    outs:
+      - data/external/processed/Midjourney/accepted_records.csv
+      - data/external/processed/Midjourney/rejected_records.csv
 
   split_data:
     cmd: python -m gan_busters.data_pipeline.split

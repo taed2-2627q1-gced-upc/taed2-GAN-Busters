@@ -11,6 +11,10 @@
 ### Stable Diffusion / Latent Diffusion
 - [Rombach, R., Blattmann, A., Lorenz, D., Esser, P., & Ommer, B. (2022). *High-Resolution Image Synthesis with Latent Diffusion Models.*](https://openaccess.thecvf.com/content/CVPR2022/papers/Rombach_High-Resolution_Image_Synthesis_With_Latent_Diffusion_Models_CVPR_2022_paper.pdf)
 
+### External evaluation dataset
+- [Zhu, M., Chen, H., Yan, Q., et al. (2023). *GenImage: A Million-Scale Benchmark for Detecting AI-Generated Image*](https://arxiv.org/abs/2306.08571)
+- [Tiny GenImage](https://www.kaggle.com/datasets/yangsangtai/tiny-genimage): A scaled-down version of the original GenImage benchmark, which contains real images and synthetic images generated using different generative models. Used for external evaluation to assess how well the CIFAKE trained model generalizes to a different data distribution and image generators.
+
 ## Related work
 
 ### CIFAR-10 Hyperparameter Selection Study

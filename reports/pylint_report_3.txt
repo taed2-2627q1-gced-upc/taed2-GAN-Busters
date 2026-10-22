@@ -1,0 +1,162 @@
+************* Module gan_busters.external_evaluation
+gan_busters/external_evaluation.py:68:0: C0304: Final newline missing (missing-final-newline)
+************* Module gan_busters.main
+gan_busters/main.py:28:0: R0913: Too many arguments (9/5) (too-many-arguments)
+gan_busters/main.py:28:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+************* Module gan_busters.streamlit_app
+gan_busters/streamlit_app.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+************* Module gan_busters.api.app
+gan_busters/api/app.py:239:0: C0301: Line too long (115/100) (line-too-long)
+gan_busters/api/app.py:242:0: C0301: Line too long (107/100) (line-too-long)
+gan_busters/api/app.py:243:0: C0301: Line too long (135/100) (line-too-long)
+gan_busters/api/app.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+gan_busters/api/app.py:14:0: E0611: No name 'keras' in module 'tensorflow' (no-name-in-module)
+gan_busters/api/app.py:34:0: C0103: Constant name "model" doesn't conform to UPPER_CASE naming style (invalid-name)
+gan_busters/api/app.py:43:19: W0621: Redefining name 'app' from outer scope (line 70) (redefined-outer-name)
+gan_busters/api/app.py:45:4: W0603: Using the global statement (global-statement)
+gan_busters/api/app.py:56:12: W0707: Consider explicitly re-raising using 'except Exception as exc' and 'raise RuntimeError('Model could not be loaded from MLflow.') from exc' (raise-missing-from)
+gan_busters/api/app.py:43:19: W0613: Unused argument 'app' (unused-argument)
+gan_busters/api/app.py:82:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/api/app.py:105:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/api/app.py:109:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/api/app.py:117:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/api/app.py:249:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/api/app.py:349:4: C0415: Import outside toplevel (datetime.datetime, datetime.timezone) (import-outside-toplevel)
+gan_busters/api/app.py:351:4: C0415: Import outside toplevel (mlflow.tracking.MlflowClient) (import-outside-toplevel)
+gan_busters/api/app.py:422:11: W0718: Catching too general exception Exception (broad-exception-caught)
+gan_busters/api/app.py:417:15: W0718: Catching too general exception Exception (broad-exception-caught)
+************* Module gan_busters.api.metrics
+gan_busters/api/metrics.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+gan_busters/api/metrics.py:16:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/api/metrics.py:33:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/api/metrics.py:38:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/api/metrics.py:63:8: C0415: Import outside toplevel (numpy) (import-outside-toplevel)
+************* Module gan_busters.api.schemas
+gan_busters/api/schemas.py:9:0: C0301: Line too long (109/100) (line-too-long)
+gan_busters/api/schemas.py:10:0: C0301: Line too long (113/100) (line-too-long)
+gan_busters/api/schemas.py:13:0: C0301: Line too long (107/100) (line-too-long)
+gan_busters/api/schemas.py:16:0: C0304: Final newline missing (missing-final-newline)
+gan_busters/api/schemas.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+gan_busters/api/schemas.py:6:0: C0115: Missing class docstring (missing-class-docstring)
+gan_busters/api/schemas.py:12:0: C0115: Missing class docstring (missing-class-docstring)
+gan_busters/api/schemas.py:15:0: C0115: Missing class docstring (missing-class-docstring)
+************* Module gan_busters.data_pipeline.data_integrity
+gan_busters/data_pipeline/data_integrity.py:110:0: R0914: Too many local variables (16/15) (too-many-locals)
+************* Module gan_busters.data_pipeline.inspect
+gan_busters/data_pipeline/inspect.py:108:0: R0914: Too many local variables (16/15) (too-many-locals)
+************* Module gan_busters.data_pipeline.prepare_external
+gan_busters/data_pipeline/prepare_external.py:33:0: C0303: Trailing whitespace (trailing-whitespace)
+gan_busters/data_pipeline/prepare_external.py:9:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_pipeline/prepare_external.py:12:39: E1101: Instance of 'list' has no 'items' member (no-member)
+gan_busters/data_pipeline/prepare_external.py:13:17: E1101: Module 'gan_busters.config' has no 'EXTERNAL_SOURCE_DIR' member (no-member)
+gan_busters/data_pipeline/prepare_external.py:26:36: E1101: Module 'gan_busters.config' has no 'EXTERNAL_LABELS' member (no-member)
+gan_busters/data_pipeline/prepare_external.py:31:18: E1101: Module 'gan_busters.config' has no 'EXTERNAL_SOURCE_DIR' member (no-member)
+************* Module gan_busters.data_testing.deepchecks_validation
+gan_busters/data_testing/deepchecks_validation.py:29:0: E0401: Unable to import 'deepchecks.vision' (import-error)
+gan_busters/data_testing/deepchecks_validation.py:30:0: E0401: Unable to import 'deepchecks.vision.checks' (import-error)
+gan_busters/data_testing/deepchecks_validation.py:31:0: E0401: Unable to import 'deepchecks.vision.suites' (import-error)
+gan_busters/data_testing/deepchecks_validation.py:171:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/deepchecks_validation.py:184:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/deepchecks_validation.py:207:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/deepchecks_validation.py:251:0: R0913: Too many arguments (7/5) (too-many-arguments)
+gan_busters/data_testing/deepchecks_validation.py:251:0: R0917: Too many positional arguments (7/5) (too-many-positional-arguments)
+gan_busters/data_testing/deepchecks_validation.py:251:0: R0914: Too many local variables (16/15) (too-many-locals)
+gan_busters/data_testing/deepchecks_validation.py:307:0: R0913: Too many arguments (7/5) (too-many-arguments)
+gan_busters/data_testing/deepchecks_validation.py:307:0: R0917: Too many positional arguments (7/5) (too-many-positional-arguments)
+************* Module gan_busters.data_testing.ge_validation
+gan_busters/data_testing/ge_validation.py:38:0: E0401: Unable to import 'great_expectations' (import-error)
+gan_busters/data_testing/ge_validation.py:39:0: E0401: Unable to import 'great_expectations.data_context.types.base' (import-error)
+gan_busters/data_testing/ge_validation.py:40:0: E0401: Unable to import 'great_expectations.expectations' (import-error)
+gan_busters/data_testing/ge_validation.py:145:4: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/ge_validation.py:163:4: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/ge_validation.py:167:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/ge_validation.py:186:0: C0116: Missing function or method docstring (missing-function-docstring)
+************* Module gan_busters.modeling.architecture
+gan_busters/modeling/architecture.py:11:0: E0611: No name 'keras' in module 'tensorflow' (no-name-in-module)
+gan_busters/modeling/architecture.py:12:0: E0401: Unable to import 'tensorflow.keras' (import-error)
+gan_busters/modeling/architecture.py:12:0: E0611: No name 'keras' in module 'tensorflow' (no-name-in-module)
+gan_busters/modeling/architecture.py:18:0: R0913: Too many arguments (9/5) (too-many-arguments)
+gan_busters/modeling/architecture.py:18:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+************* Module gan_busters.modeling.evaluate
+gan_busters/modeling/evaluate.py:19:0: E0611: No name 'keras' in module 'tensorflow' (no-name-in-module)
+gan_busters/modeling/evaluate.py:30:0: R0913: Too many arguments (6/5) (too-many-arguments)
+gan_busters/modeling/evaluate.py:30:0: R0917: Too many positional arguments (6/5) (too-many-positional-arguments)
+************* Module gan_busters.modeling.experiment
+gan_busters/modeling/experiment.py:25:0: R0913: Too many arguments (9/5) (too-many-arguments)
+gan_busters/modeling/experiment.py:25:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+gan_busters/modeling/experiment.py:25:0: R0914: Too many local variables (19/15) (too-many-locals)
+gan_busters/modeling/experiment.py:37:4: E1101: Module 'tensorflow' has no 'keras' member (no-member)
+************* Module gan_busters.modeling.predict
+gan_busters/modeling/predict.py:20:0: E0611: No name 'keras' in module 'tensorflow' (no-name-in-module)
+************* Module gan_busters.modeling.preprocessing
+gan_busters/modeling/preprocessing.py:12:0: E0611: No name 'keras' in module 'tensorflow' (no-name-in-module)
+************* Module gan_busters.modeling.train
+gan_busters/modeling/train.py:14:0: E0611: No name 'keras' in module 'tensorflow' (no-name-in-module)
+gan_busters/modeling/train.py:26:0: R0913: Too many arguments (9/5) (too-many-arguments)
+gan_busters/modeling/train.py:26:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+gan_busters/modeling/train.py:26:0: R0914: Too many local variables (16/15) (too-many-locals)
+************* Module gan_busters.pages.Predict
+gan_busters/pages/Predict.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+gan_busters/pages/Predict.py:1:0: C0103: Module name "Predict" doesn't conform to snake_case naming style (invalid-name)
+************* Module gan_busters.pages.Statistics
+gan_busters/pages/Statistics.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+gan_busters/pages/Statistics.py:1:0: C0103: Module name "Statistics" doesn't conform to snake_case naming style (invalid-name)
+************* Module gan_busters.pages.__init__
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.external_evaluation:[35:42]
+==gan_busters.modeling.evaluate:[159:166]
+    test_records = records[records["split"] == "test"].copy()
+
+    metrics = evaluate_model(
+        model=model,
+        evaluation_records=test_records,
+        threshold=threshold,
+        batch_size=batch_size, (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.data_pipeline.data_integrity:[198:205]
+==gan_busters.data_pipeline.split:[162:169]
+        "relative_path",
+        "split",
+        "label",
+        "subclass",
+        "hash",
+    ]
+ (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.data_pipeline.inspect:[166:172]
+==gan_busters.data_pipeline.split:[161:167]
+    fields = [
+        "relative_path",
+        "split",
+        "label",
+        "subclass",
+        "hash", (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.data_pipeline.data_integrity:[198:203]
+==gan_busters.data_pipeline.inspect:[167:172]
+        "relative_path",
+        "split",
+        "label",
+        "subclass",
+        "hash", (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.data_pipeline.data_integrity:[217:222]
+==gan_busters.data_pipeline.split:[162:167]
+        "relative_path",
+        "split",
+        "label",
+        "subclass",
+        "hash", (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.pages.Predict:[7:13]
+==gan_busters.pages.Statistics:[6:12]
+API_URL = os.getenv(
+    "GAN_BUSTERS_API_URL",
+    "http://127.0.0.1:8000",
+).rstrip("/")
+
+st.set_page_config( (duplicate-code)
+
+------------------------------------------------------------------
+Your code has been rated at 8.74/10 (previous run: 8.71/10, +0.04)
+

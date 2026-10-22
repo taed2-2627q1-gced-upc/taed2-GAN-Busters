@@ -14,9 +14,9 @@ No input images are read from or written to persistent storage here.
 from collections.abc import Sequence
 from pathlib import Path
 
+from loguru import logger
 import pandas as pd
 import tensorflow as tf
-from loguru import logger
 from tensorflow import keras
 
 from gan_busters import config
@@ -53,10 +53,7 @@ def predict_images(
     if len(images) == 0:
         return []
 
-    same_shape = all(
-        image.shape == images[0].shape
-        for image in images
-    )
+    same_shape = all(image.shape == images[0].shape for image in images)
 
     if same_shape:
         probabilities = model(
@@ -85,22 +82,15 @@ def predict_images(
     for fake_probability in fake_probabilities:
         fake_probability = float(fake_probability)
 
-        label = (
-            "FAKE"
-            if fake_probability >= threshold
-            else "REAL"
-        )
+        label = "FAKE" if fake_probability >= threshold else "REAL"
 
-        class_probability = (
-            fake_probability
-            if label == "FAKE"
-            else 1.0 - fake_probability
-        )
+        confidence_score = fake_probability if label == "FAKE" else 1.0 - fake_probability
 
         predictions.append(
             {
                 "label": label,
-                "class_probability": round(class_probability, 4)
+                "fake_probability": round(fake_probability, 4),
+                "confidence_score": round(confidence_score, 4),
             }
         )
 
@@ -115,24 +105,16 @@ def predict_from_path(
 ) -> list[dict]:
     """Run predictions on one image or all valid images in a directory."""
 
-    model = keras.models.load_model(
-        config.MODELS_DIR / model_name
-    )
+    model = keras.models.load_model(config.MODELS_DIR / model_name)
 
     if path.is_file():
         image_paths = [path]
 
     elif path.is_dir():
-        image_paths = [
-            image_path
-            for image_path in path.iterdir()
-            if image_path.is_file()
-        ]
+        image_paths = [image_path for image_path in path.iterdir() if image_path.is_file()]
 
     else:
-        raise ValueError(
-            f"Path must be an image file or directory: {path}"
-        )
+        raise ValueError(f"Path must be an image file or directory: {path}")
 
     images = []
     valid_paths = []
@@ -144,14 +126,10 @@ def predict_from_path(
             valid_paths.append(image_path)
 
         except tf.errors.InvalidArgumentError:
-            logger.warning(
-                f"Skipping invalid image file: {image_path}"
-            )
+            logger.warning(f"Skipping invalid image file: {image_path}")
 
     if not images:
-        raise ValueError(
-            f"No valid images found at: {path}"
-        )
+        raise ValueError(f"No valid images found at: {path}")
 
     predictions = predict_images(
         model=model,
