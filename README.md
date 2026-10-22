@@ -17,6 +17,7 @@ Additional project documentation can be found in:
 - [`references/README.md`](references/README.md) — datasets, literature, standards, and related work
 - [`docs/first-time-setup.md`](docs/first-time-setup.md) - environment installation, data setup, and MLflow/DagsHub configuration
 - [`docs/workflow.md`](docs/workflow.md) - daily development workflow, Git/DVC synchronization, and publishing changes
+- [GAN-Busters Web Application](http://nattech.fib.upc.edu:40510/Statistics) — public application, available temporarily until January 2027
 
 ---
 

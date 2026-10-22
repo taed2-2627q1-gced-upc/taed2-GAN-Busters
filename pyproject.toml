@@ -46,4 +46,5 @@ source = ["gan_busters"]
 omit = [
     "gan_busters/streamlit_app.py",
     "gan_busters/pages/*",
+    "gan_busters/data_testing",
 ]
