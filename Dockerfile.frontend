@@ -13,10 +13,10 @@ COPY gan_busters/__init__.py ./gan_busters/__init__.py
 COPY gan_busters/streamlit_app.py ./gan_busters/streamlit_app.py
 COPY gan_busters/pages gan_busters/pages
 
-EXPOSE 8080
+EXPOSE 40510
 
 CMD ["streamlit", "run", \
     "gan_busters/streamlit_app.py", \
     "--server.address=0.0.0.0", \
-    "--server.port=8080", \
+    "--server.port=40510", \
     "--server.headless=true"]
