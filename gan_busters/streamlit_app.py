@@ -8,7 +8,7 @@ st.set_page_config(
 
 API_URL = os.getenv(
     "GAN_BUSTERS_API_URL",
-    "http://127.0.0.1:8000",
+    "http://0.0.0.0:8081",
 ).rstrip("/")
 
 st.title("GAN-Busters")

@@ -1,0 +1,25 @@
+FROM python:3.10-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+COPY requirements_back.txt .
+RUN pip install --no-cache-dir -r requirements_back.txt
+
+COPY gan_busters/api ./gan_busters/api
+
+COPY gan_busters/modeling/__init__.py ./gan_busters/modeling/__init__.py
+COPY gan_busters/modeling/predict.py ./gan_busters/modeling/predict.py
+COPY gan_busters/modeling/tracking.py ./gan_busters/modeling/tracking.py
+
+COPY gan_busters/__init__.py ./gan_busters/__init__.py
+COPY gan_busters/config.py ./gan_busters/config.py
+
+
+EXPOSE 8081
+
+CMD ["uvicorn", "gan_busters.api.app:app", \
+    "--host", "0.0.0.0", "--port", "8081"]

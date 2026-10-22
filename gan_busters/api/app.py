@@ -44,7 +44,7 @@ model: keras.Model = None
 
 SUPPORTED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
-FORMAT_TO_MIME = {"JPEG": "image/jpeg", "PNG": "image/png"}
+FORMAT_TO_MIME = {"JPEG": "image/jpeg", "PNG": "image/png", "JPG": "image/jpeg"}
 
 CustomUploadFile = Annotated[UploadFile, WithJsonSchema({"type": "string", "format": "binary"})]
 
