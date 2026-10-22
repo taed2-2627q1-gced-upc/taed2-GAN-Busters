@@ -20,7 +20,7 @@ COPY gan_busters/__init__.py ./gan_busters/__init__.py
 COPY gan_busters/config.py ./gan_busters/config.py
 
 
-EXPOSE 40511
+EXPOSE 8081
 
 CMD ["uvicorn", "gan_busters.api.app:app", \
-    "--host", "0.0.0.0", "--port", "40511"]
+    "--host", "0.0.0.0", "--port", "8081"]
