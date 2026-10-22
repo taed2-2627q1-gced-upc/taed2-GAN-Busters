@@ -5,6 +5,7 @@ from typing import List, Annotated
 from pydantic import WithJsonSchema
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 from loguru import logger
 
 import tensorflow as tf
@@ -44,7 +45,7 @@ model: keras.Model = None
 
 SUPPORTED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
-FORMAT_TO_MIME = {"JPEG": "image/jpeg", "PNG": "image/png"}
+FORMAT_TO_MIME = {"JPEG": "image/jpeg", "PNG": "image/png", "JPG": "image/jpeg"}
 
 CustomUploadFile = Annotated[UploadFile, WithJsonSchema({"type": "string", "format": "binary"})]
 
@@ -439,3 +440,7 @@ def analytics_performance():
             "mlflow": mlflow_stats,
         },
     }
+
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)

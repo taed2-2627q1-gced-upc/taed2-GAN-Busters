@@ -7,7 +7,6 @@ tracking server and provides reusable functions for experiment tracking.
 
 from pathlib import Path
 
-import dagshub  # pylint: disable=import-error,unused-import
 import mlflow  # pylint: disable=import-error
 from loguru import logger
 
