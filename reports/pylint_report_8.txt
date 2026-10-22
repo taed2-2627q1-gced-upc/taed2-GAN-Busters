@@ -1,0 +1,113 @@
+************* Module gan_busters.main
+gan_busters/main.py:28:0: R0913: Too many arguments (9/5) (too-many-arguments)
+gan_busters/main.py:28:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+************* Module gan_busters.api.app
+gan_busters/api/app.py:246:0: C0301: Line too long (115/100) (line-too-long)
+gan_busters/api/app.py:451:0: C0304: Final newline missing (missing-final-newline)
+gan_busters/api/app.py:37:0: C0103: Constant name "model" doesn't conform to UPPER_CASE naming style (invalid-name)
+gan_busters/api/app.py:47:19: W0621: Redefining name 'app' from outer scope (line 73) (redefined-outer-name)
+gan_busters/api/app.py:49:4: W0603: Using the global statement (global-statement)
+gan_busters/api/app.py:58:12: W0707: Consider explicitly re-raising using 'except Exception as exc' and 'raise RuntimeError('Model could not be loaded from MLflow.') from exc' (raise-missing-from)
+gan_busters/api/app.py:47:19: W0613: Unused argument 'app' (unused-argument)
+gan_busters/api/app.py:365:4: C0415: Import outside toplevel (datetime.datetime, datetime.timezone) (import-outside-toplevel)
+gan_busters/api/app.py:367:4: C0415: Import outside toplevel (mlflow.tracking.MlflowClient) (import-outside-toplevel)
+gan_busters/api/app.py:436:11: W0718: Catching too general exception Exception (broad-exception-caught)
+gan_busters/api/app.py:431:15: W0718: Catching too general exception Exception (broad-exception-caught)
+gan_busters/api/app.py:450:0: C0116: Missing function or method docstring (missing-function-docstring)
+************* Module gan_busters.api.metrics
+gan_busters/api/metrics.py:73:8: C0415: Import outside toplevel (numpy) (import-outside-toplevel)
+************* Module gan_busters.data_pipeline.data_integrity
+gan_busters/data_pipeline/data_integrity.py:110:0: R0914: Too many local variables (16/15) (too-many-locals)
+************* Module gan_busters.data_pipeline.inspect
+gan_busters/data_pipeline/inspect.py:108:0: R0914: Too many local variables (16/15) (too-many-locals)
+************* Module gan_busters.data_pipeline.prepare_external
+gan_busters/data_pipeline/prepare_external.py:33:0: C0303: Trailing whitespace (trailing-whitespace)
+gan_busters/data_pipeline/prepare_external.py:9:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_pipeline/prepare_external.py:12:39: E1101: Instance of 'list' has no 'items' member (no-member)
+gan_busters/data_pipeline/prepare_external.py:13:17: E1101: Module 'gan_busters.config' has no 'EXTERNAL_SOURCE_DIR' member (no-member)
+gan_busters/data_pipeline/prepare_external.py:26:36: E1101: Module 'gan_busters.config' has no 'EXTERNAL_LABELS' member (no-member)
+gan_busters/data_pipeline/prepare_external.py:31:18: E1101: Module 'gan_busters.config' has no 'EXTERNAL_SOURCE_DIR' member (no-member)
+************* Module gan_busters.data_testing.deepchecks_validation
+gan_busters/data_testing/deepchecks_validation.py:254:0: R0913: Too many arguments (7/5) (too-many-arguments)
+gan_busters/data_testing/deepchecks_validation.py:254:0: R0917: Too many positional arguments (7/5) (too-many-positional-arguments)
+gan_busters/data_testing/deepchecks_validation.py:254:0: R0914: Too many local variables (16/15) (too-many-locals)
+gan_busters/data_testing/deepchecks_validation.py:310:0: R0913: Too many arguments (7/5) (too-many-arguments)
+gan_busters/data_testing/deepchecks_validation.py:310:0: R0917: Too many positional arguments (7/5) (too-many-positional-arguments)
+************* Module gan_busters.data_testing.ge_validation
+gan_busters/data_testing/ge_validation.py:171:4: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/ge_validation.py:189:4: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/ge_validation.py:193:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/ge_validation.py:212:0: C0116: Missing function or method docstring (missing-function-docstring)
+gan_busters/data_testing/ge_validation.py:340:0: R0913: Too many arguments (6/5) (too-many-arguments)
+gan_busters/data_testing/ge_validation.py:340:0: R0917: Too many positional arguments (6/5) (too-many-positional-arguments)
+************* Module gan_busters.modeling.architecture
+gan_busters/modeling/architecture.py:18:0: R0913: Too many arguments (9/5) (too-many-arguments)
+gan_busters/modeling/architecture.py:18:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+************* Module gan_busters.modeling.evaluate
+gan_busters/modeling/evaluate.py:30:0: R0913: Too many arguments (6/5) (too-many-arguments)
+gan_busters/modeling/evaluate.py:30:0: R0917: Too many positional arguments (6/5) (too-many-positional-arguments)
+************* Module gan_busters.modeling.experiment
+gan_busters/modeling/experiment.py:25:0: R0913: Too many arguments (9/5) (too-many-arguments)
+gan_busters/modeling/experiment.py:25:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+gan_busters/modeling/experiment.py:25:0: R0914: Too many local variables (19/15) (too-many-locals)
+************* Module gan_busters.modeling.train
+gan_busters/modeling/train.py:26:0: R0913: Too many arguments (9/5) (too-many-arguments)
+gan_busters/modeling/train.py:26:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+gan_busters/modeling/train.py:26:0: R0914: Too many local variables (16/15) (too-many-locals)
+************* Module gan_busters.pages.Predict
+gan_busters/pages/Predict.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+gan_busters/pages/Predict.py:1:0: C0103: Module name "Predict" doesn't conform to snake_case naming style (invalid-name)
+************* Module gan_busters.pages.Statistics
+gan_busters/pages/Statistics.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+gan_busters/pages/Statistics.py:1:0: C0103: Module name "Statistics" doesn't conform to snake_case naming style (invalid-name)
+gan_busters/pages/Statistics.py:8:0: E0401: Unable to import 'streamlit_autorefresh' (import-error)
+************* Module gan_busters.pages.__init__
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.external_evaluation:[31:38]
+==gan_busters.modeling.evaluate:[159:166]
+        test_records = records[records["split"] == "test"].copy()
+
+        metrics = evaluate_model(
+            model=model,
+            evaluation_records=test_records,
+            threshold=threshold,
+            batch_size=batch_size, (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.data_pipeline.data_integrity:[198:205]
+==gan_busters.data_pipeline.split:[162:169]
+        "relative_path",
+        "split",
+        "label",
+        "subclass",
+        "hash",
+    ]
+ (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.data_pipeline.inspect:[166:172]
+==gan_busters.data_pipeline.split:[161:167]
+    fields = [
+        "relative_path",
+        "split",
+        "label",
+        "subclass",
+        "hash", (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.data_pipeline.data_integrity:[198:203]
+==gan_busters.data_pipeline.inspect:[167:172]
+        "relative_path",
+        "split",
+        "label",
+        "subclass",
+        "hash", (duplicate-code)
+gan_busters/pages/__init__.py:1:0: R0801: Similar lines in 2 files
+==gan_busters.data_pipeline.data_integrity:[217:222]
+==gan_busters.data_pipeline.split:[162:167]
+        "relative_path",
+        "split",
+        "label",
+        "subclass",
+        "hash", (duplicate-code)
+
+------------------------------------------------------------------
+Your code has been rated at 9.46/10 (previous run: 9.46/10, +0.00)
+

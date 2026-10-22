@@ -23,13 +23,15 @@ def record_request(
 ) -> None:
     """Record an HTTP request's metadata, status code, and execution time."""
     with _lock:
-        _requests.append({
-            "timestamp": time(),
-            "method": method,
-            "path": path,
-            "status_code": status_code,
-            "duration_ms": duration_ms,
-        })
+        _requests.append(
+            {
+                "timestamp": time(),
+                "method": method,
+                "path": path,
+                "status_code": status_code,
+                "duration_ms": duration_ms,
+            }
+        )
         _status_counts[str(status_code)] += 1
 
 
@@ -51,12 +53,8 @@ def get_snapshot() -> dict:
         status_counts = dict(_status_counts)
 
     latencies = [r["duration_ms"] for r in requests]
-    prediction_requests = [
-        r for r in requests if r["path"] == "/predict"
-    ]
-    prediction_latencies = [
-        r["duration_ms"] for r in prediction_requests
-    ]
+    prediction_requests = [r for r in requests if r["path"] == "/predict"]
+    prediction_latencies = [r["duration_ms"] for r in prediction_requests]
 
     def latency_summary(values):
         """Calculate summary statistics and latency percentiles in milliseconds."""
@@ -82,22 +80,16 @@ def get_snapshot() -> dict:
         }
 
     now = time()
-    recent_requests = [
-        r for r in requests if now - r["timestamp"] <= 60
-    ]
+    recent_requests = [r for r in requests if now - r["timestamp"] <= 60]
 
-    errors = sum(
-        r["status_code"] >= 400 for r in requests
-    )
+    errors = sum(r["status_code"] >= 400 for r in requests)
 
     return {
         "requests": {
             "total_recorded": len(requests),
             "status_counts": status_counts,
             "error_count": errors,
-            "error_rate_percent": round(
-                100 * errors / len(requests), 2
-            ) if requests else 0,
+            "error_rate_percent": round(100 * errors / len(requests), 2) if requests else 0,
             "requests_last_minute": len(recent_requests),
             "throughput_rpm": len(recent_requests),
         },
@@ -108,17 +100,13 @@ def get_snapshot() -> dict:
         "predictions": {
             "total_batches_recorded": len(batches),
             "total_images_recorded": sum(batches),
-            "average_batch_size": round(
-                sum(batches) / len(batches), 2
-            ) if batches else 0,
+            "average_batch_size": round(sum(batches) / len(batches), 2) if batches else 0,
             "max_batch_size": max(batches, default=0),
         },
         "system": {
             "cpu_percent": psutil.cpu_percent(interval=None),
             "memory_percent": psutil.virtual_memory().percent,
-            "process_memory_mb": round(
-                _process.memory_info().rss / (1024 ** 2), 2
-            ),
+            "process_memory_mb": round(_process.memory_info().rss / (1024**2), 2),
         },
         "history_limit": MAX_HISTORY,
     }

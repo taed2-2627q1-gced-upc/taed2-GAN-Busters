@@ -36,8 +36,8 @@ from pathlib import Path
 from typing import Annotated
 
 import great_expectations as gx
-import great_expectations.expectations as gxe
 from great_expectations.data_context.types.base import ProgressBarsConfig
+import great_expectations.expectations as gxe
 from loguru import logger
 import pandas as pd
 import typer
@@ -89,9 +89,8 @@ DEFAULT_TABLE_PATH = config.TABLES_DIR / "class_proportions.csv"
 # ---------------------------------------------------------------------------
 def _split_vs_global(df: pd.DataFrame, group: pd.Series, categories: list[str]) -> pd.DataFrame:
     """Share of each category inside every split, compared with the global share."""
-    counts = (
-        pd.crosstab(df["split"], group)
-        .reindex(index=SPLITS, columns=categories, fill_value=0)
+    counts = pd.crosstab(df["split"], group).reindex(
+        index=SPLITS, columns=categories, fill_value=0
     )
     global_counts = counts.sum(axis=0)
     global_share = global_counts / global_counts.sum()
@@ -119,21 +118,24 @@ def _real_vs_fake(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for scope in [*SPLITS, "all"]:
         sub = df if scope == "all" else df[df["split"] == scope]
-        counts = (
-            pd.crosstab(sub["subclass"], sub["label"])
-            .reindex(index=SUBCLASSES, columns=LABELS, fill_value=0)
+        counts = pd.crosstab(sub["subclass"], sub["label"]).reindex(
+            index=SUBCLASSES, columns=LABELS, fill_value=0
         )
         totals = counts.sum(axis=0)
         for subclass in SUBCLASSES:
-            real = counts.loc[subclass, "REAL"] / totals["REAL"] if totals["REAL"] else float("nan")
-            fake = counts.loc[subclass, "FAKE"] / totals["FAKE"] if totals["FAKE"] else float("nan")
+            real = (
+                counts.loc[subclass, "REAL"] / totals["REAL"] if totals["REAL"] else float("nan")
+            )
+            fake = (
+                counts.loc[subclass, "FAKE"] / totals["FAKE"] if totals["FAKE"] else float("nan")
+            )
             rows.append(
                 {
                     "split": scope,
                     "group": subclass,
                     "count": int(counts.loc[subclass].sum()),
-                    "proportion": real,   # P(subclass | REAL)
-                    "reference": fake,    # P(subclass | FAKE)
+                    "proportion": real,  # P(subclass | REAL)
+                    "reference": fake,  # P(subclass | FAKE)
                     "abs_deviation": abs(real - fake),
                 }
             )
@@ -169,6 +171,7 @@ class Validator:
         self.results: list[dict] = []
 
     def run(self, check: str, frame: pd.DataFrame, expectations: list) -> None:
+        """Run Great Expectations checks on a DataFrame and store their results."""
         asset = self.source.add_dataframe_asset(name=check)
         batch_definition = asset.add_batch_definition_whole_dataframe(f"{check}_batch")
         batch = batch_definition.get_batch(batch_parameters={"dataframe": frame})
@@ -187,10 +190,12 @@ class Validator:
 
     @property
     def failures(self) -> list[dict]:
+        """Return validation results for failed expectations."""
         return [r for r in self.results if not r["success"]]
 
 
 def records_expectations() -> list:
+    """Define expectations for record integrity and valid categorical values."""
     expectations = [
         gxe.ExpectTableColumnsToMatchSet(column_set=EXPECTED_COLUMNS, exact_match=True),
         gxe.ExpectTableRowCountToBeBetween(min_value=1),
@@ -210,6 +215,7 @@ def records_expectations() -> list:
 
 
 def proportion_expectations(tolerance: float) -> list:
+    """Define expectations for class proportions within the given tolerance."""
     return [
         gxe.ExpectColumnValuesToNotBeNull(column="abs_deviation"),
         gxe.ExpectColumnValuesToBeBetween(
@@ -262,15 +268,11 @@ def run_validation(
     for name, table in tables.items():
         validator.run(name, table, proportion_expectations(tolerance))
         worst = table["abs_deviation"].max()
-        logger.info(
-            "{}: max deviation {:.4f} (tolerance {:.4f})", name, worst, tolerance
-        )
+        logger.info("{}: max deviation {:.4f} (tolerance {:.4f})", name, worst, tolerance)
 
     _log_deviations(tables, tolerance)
     remediation = PROPORTION_REMEDIATION if validator.failures else None
-    _write_report(
-        validator, report_path, tolerance, tables, table_path, remediation=remediation
-    )
+    _write_report(validator, report_path, tolerance, tables, table_path, remediation=remediation)
 
     if validator.failures:
         _log_failures(validator.failures)
