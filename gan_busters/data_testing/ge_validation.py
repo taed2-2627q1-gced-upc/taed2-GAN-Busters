@@ -36,8 +36,8 @@ from pathlib import Path
 from typing import Annotated
 
 import great_expectations as gx
-from great_expectations.data_context.types.base import ProgressBarsConfig
 import great_expectations.expectations as gxe
+from great_expectations.data_context.types.base import ProgressBarsConfig
 from loguru import logger
 import pandas as pd
 import typer
@@ -51,6 +51,34 @@ LABELS = sorted(config.LABEL_MAPPING)  # ["FAKE", "REAL"]
 SPLITS = ["train", "val", "test"]
 SUBCLASSES = list(config.CIFAR10_CLASSES.values())
 
+SCHEMA_REMEDIATION = [
+    "1. The dataset index is malformed, so the proportions were not evaluated.",
+    "2. Check the pipeline state: `python -m dvc status`, then `python -m dvc pull`.",
+    "3. If the data are stale or inconsistent, regenerate them: `python -m dvc repro`.",
+    "   Do not edit accepted_records.csv by hand: it is a DVC output.",
+]
+
+PROPORTION_REMEDIATION = [
+    "1. Find the cause. The offending groups are listed above; compare them with the",
+    "   rejected records. If they are the groups that lost images in deduplication,",
+    "   the imbalance is expected, not a pipeline bug.",
+    "2. Expected and acceptable: re-run with a higher --tolerance and document why",
+    "   in the report.",
+    "3. Split-level checks failed (label_by_split, subclass_by_split,",
+    "   label_subclass_by_split) and it is not acceptable: regenerate a stratified",
+    "   split (label x subclass).",
+    "   - In dvc.yaml, set the split_data command to:",
+    "       python -m gan_busters.data_pipeline.split --resplit",
+    "   - Run `python -m dvc repro`, then this validation again.",
+    "   Trade-off: this discards the predefined CIFAKE train/test partition, changes",
+    "   the test set, and makes earlier experiment results not comparable.",
+    "4. Only subclass_real_vs_fake failed: the cause is the deduplication itself (it",
+    "   removes FAKE images unevenly) and no split can fix it. Accept and document it,",
+    "   or compensate at modelling time (e.g. sample weights per label x subclass).",
+    "Do not edit accepted_records.csv by hand: it is a DVC output regenerated from",
+    "integrity_records.csv.",
+]
+
 DEFAULT_TOLERANCE = 0.02
 DEFAULT_REPORT_PATH = config.REPORTS_DIR / "great_expectations_class_proportions.json"
 DEFAULT_TABLE_PATH = config.TABLES_DIR / "class_proportions.csv"
@@ -61,8 +89,9 @@ DEFAULT_TABLE_PATH = config.TABLES_DIR / "class_proportions.csv"
 # ---------------------------------------------------------------------------
 def _split_vs_global(df: pd.DataFrame, group: pd.Series, categories: list[str]) -> pd.DataFrame:
     """Share of each category inside every split, compared with the global share."""
-    counts = pd.crosstab(df["split"], group).reindex(
-        index=SPLITS, columns=categories, fill_value=0
+    counts = (
+        pd.crosstab(df["split"], group)
+        .reindex(index=SPLITS, columns=categories, fill_value=0)
     )
     global_counts = counts.sum(axis=0)
     global_share = global_counts / global_counts.sum()
@@ -90,24 +119,21 @@ def _real_vs_fake(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for scope in [*SPLITS, "all"]:
         sub = df if scope == "all" else df[df["split"] == scope]
-        counts = pd.crosstab(sub["subclass"], sub["label"]).reindex(
-            index=SUBCLASSES, columns=LABELS, fill_value=0
+        counts = (
+            pd.crosstab(sub["subclass"], sub["label"])
+            .reindex(index=SUBCLASSES, columns=LABELS, fill_value=0)
         )
         totals = counts.sum(axis=0)
         for subclass in SUBCLASSES:
-            real = (
-                counts.loc[subclass, "REAL"] / totals["REAL"] if totals["REAL"] else float("nan")
-            )
-            fake = (
-                counts.loc[subclass, "FAKE"] / totals["FAKE"] if totals["FAKE"] else float("nan")
-            )
+            real = counts.loc[subclass, "REAL"] / totals["REAL"] if totals["REAL"] else float("nan")
+            fake = counts.loc[subclass, "FAKE"] / totals["FAKE"] if totals["FAKE"] else float("nan")
             rows.append(
                 {
                     "split": scope,
                     "group": subclass,
                     "count": int(counts.loc[subclass].sum()),
-                    "proportion": real,  # P(subclass | REAL)
-                    "reference": fake,  # P(subclass | FAKE)
+                    "proportion": real,   # P(subclass | REAL)
+                    "reference": fake,    # P(subclass | FAKE)
                     "abs_deviation": abs(real - fake),
                 }
             )
@@ -143,7 +169,6 @@ class Validator:
         self.results: list[dict] = []
 
     def run(self, check: str, frame: pd.DataFrame, expectations: list) -> None:
-        """Run expectations against a DataFrame and store their validation results."""
         asset = self.source.add_dataframe_asset(name=check)
         batch_definition = asset.add_batch_definition_whole_dataframe(f"{check}_batch")
         batch = batch_definition.get_batch(batch_parameters={"dataframe": frame})
@@ -162,12 +187,10 @@ class Validator:
 
     @property
     def failures(self) -> list[dict]:
-        """Return validation results for expectations that did not pass."""        
         return [r for r in self.results if not r["success"]]
 
 
 def records_expectations() -> list:
-    """Define expectations for dataset schema, values, and record uniqueness."""
     expectations = [
         gxe.ExpectTableColumnsToMatchSet(column_set=EXPECTED_COLUMNS, exact_match=True),
         gxe.ExpectTableRowCountToBeBetween(min_value=1),
@@ -187,7 +210,6 @@ def records_expectations() -> list:
 
 
 def proportion_expectations(tolerance: float) -> list:
-    """Define expectations for valid counts and proportion deviations."""
     return [
         gxe.ExpectColumnValuesToNotBeNull(column="abs_deviation"),
         gxe.ExpectColumnValuesToBeBetween(
@@ -224,7 +246,15 @@ def run_validation(
     validator.run("records", df, records_expectations())
     if validator.failures:
         _log_failures(validator.failures)
-        _write_report(validator, report_path, tolerance, tables=None, table_path=None)
+        _log_remediation(SCHEMA_REMEDIATION)
+        _write_report(
+            validator,
+            report_path,
+            tolerance,
+            tables=None,
+            table_path=None,
+            remediation=SCHEMA_REMEDIATION,
+        )
         return False
 
     # Level 2: proportions.
@@ -232,13 +262,20 @@ def run_validation(
     for name, table in tables.items():
         validator.run(name, table, proportion_expectations(tolerance))
         worst = table["abs_deviation"].max()
-        logger.info("{}: max deviation {:.4f} (tolerance {:.4f})", name, worst, tolerance)
+        logger.info(
+            "{}: max deviation {:.4f} (tolerance {:.4f})", name, worst, tolerance
+        )
 
     _log_deviations(tables, tolerance)
-    _write_report(validator, report_path, tolerance, tables, table_path)
+    remediation = PROPORTION_REMEDIATION if validator.failures else None
+    _write_report(
+        validator, report_path, tolerance, tables, table_path, remediation=remediation
+    )
 
     if validator.failures:
         _log_failures(validator.failures)
+        _log_rejected_summary(config.REJECTED_RECORDS_PATH)
+        _log_remediation(PROPORTION_REMEDIATION)
         logger.error(
             "{} of {} expectations failed.", len(validator.failures), len(validator.results)
         )
@@ -276,12 +313,37 @@ def _log_failures(failures: list[dict]) -> None:
         )
 
 
+def _log_rejected_summary(rejected_path: Path) -> None:
+    """Show which groups lost images in the integrity stage (likely cause of imbalance)."""
+    rejected_path = Path(rejected_path)
+    if not rejected_path.is_file():
+        return
+    try:
+        rejected = pd.read_csv(rejected_path)
+        summary = (
+            rejected.groupby(["label", "subclass", "rejection_reason"], dropna=False)
+            .size()
+            .sort_values(ascending=False)
+            .head(8)
+        )
+    except (KeyError, ValueError, pd.errors.ParserError):
+        return
+    logger.warning(
+        "Records rejected upstream ({}), top groups:\n{}", rejected_path.name, summary.to_string()
+    )
+
+
+def _log_remediation(steps: list[str]) -> None:
+    logger.error("HOW TO PROCEED:\n{}", "\n".join(steps))
+
+
 def _write_report(
     validator: Validator,
     report_path: Path,
     tolerance: float,
     tables: dict[str, pd.DataFrame] | None,
     table_path: Path | None,
+    remediation: list[str] | None = None,
 ) -> None:
     report_path = Path(report_path)
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -293,6 +355,8 @@ def _write_report(
         "n_failed": len(validator.failures),
         "results": validator.results,
     }
+    if remediation:
+        payload["remediation"] = remediation
     report_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
     logger.info("Report saved to {}", report_path)
 

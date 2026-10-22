@@ -9,16 +9,16 @@ from gan_busters.modeling import predict
 
 
 @pytest.mark.parametrize(
-    "probability, threshold, expected_label, expected_confidence",
+    "probability, threshold, expected_label, expected_confidence, expected_fake",
     [
-        (0.8, 0.5, "FAKE", 0.8),
-        (0.2, 0.5, "REAL", 0.8),
-        (0.5, 0.5, "FAKE", 0.5),
-        (0.6, 0.7, "REAL", 0.4),
+        (0.8, 0.5, "FAKE", 0.8, 0.8),
+        (0.2, 0.5, "REAL", 0.8, 0.2),
+        (0.5, 0.5, "FAKE", 0.5, 0.5),
+        (0.6, 0.7, "REAL", 0.4, 0.6),
     ],
 )
 def test_predict_images_threshold(
-    probability, threshold, expected_label, expected_confidence
+    probability, threshold, expected_label, expected_confidence, expected_fake
 ):
     model = MagicMock(
         return_value=tf.constant([[probability]], dtype=tf.float32)
@@ -30,7 +30,8 @@ def test_predict_images_threshold(
 
     assert results == [{
         "label": expected_label,
-        "class_probability": expected_confidence,
+        "fake_probability": expected_fake,
+        "confidence_score": expected_confidence,
     }]
 
 
