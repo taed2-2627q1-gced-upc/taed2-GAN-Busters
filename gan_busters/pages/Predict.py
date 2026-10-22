@@ -1,3 +1,4 @@
+"""Streamlit page for uploading images and displaying REAL/FAKE predictions."""
 
 import os
 
@@ -75,10 +76,7 @@ if uploaded_files:
                 except ValueError:
                     detail = response.text
 
-                st.error(
-                    f"Prediction failed ({response.status_code}): "
-                    f"{detail}"
-                )
+                st.error(f"Prediction failed ({response.status_code}): {detail}")
                 st.stop()
 
             payload = response.json()
@@ -105,12 +103,8 @@ if uploaded_files:
             for result in results:
                 label = str(result["label"]).upper()
                 filename = result["filename"]
-                fake_probability = float(
-                    result["fake_probability"]
-                )
-                confidence = float(
-                    result["confidence_score"]
-                )
+                fake_probability = float(result["fake_probability"])
+                confidence = float(result["confidence_score"])
 
                 with st.container(border=True):
                     st.write(f"**{filename}**")
@@ -130,8 +124,7 @@ if uploaded_files:
 
         except requests.Timeout:
             st.error(
-                "The prediction request timed out. "
-                "Try a smaller batch or check the API logs."
+                "The prediction request timed out. Try a smaller batch or check the API logs."
             )
         except requests.RequestException as exc:
             st.error(f"Could not reach the prediction API: {exc}")

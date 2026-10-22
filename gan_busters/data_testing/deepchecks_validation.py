@@ -23,6 +23,7 @@ Usage:
 """
 
 from collections import Counter
+from math import ceil
 from pathlib import Path
 from typing import Annotated
 
@@ -149,7 +150,7 @@ class BatchLoader:
 
     def __len__(self) -> int:
         # Lets Deepchecks know the number of batches (correct progress bars).
-        return -(-len(self.records) // self.batch_size)
+        return ceil(len(self.records) / self.batch_size)
 
     def __iter__(self):
         for start in range(0, len(self.records), self.batch_size):
@@ -185,7 +186,7 @@ def build_vision_data(df: pd.DataFrame, name: str, batch_size: int) -> VisionDat
 def prepare_dataset(
     records: pd.DataFrame, split: str, sample_size: int, batch_size: int
 ) -> VisionData:
-    """Prepare a stratified dataset sample for Deepchecks validation."""    
+    """Prepare a stratified dataset sample for Deepchecks validation."""
     subset = load_split(records, split)
     logger.info(
         "[{}] available: {} records. Class counts: {}",

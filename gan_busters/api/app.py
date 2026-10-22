@@ -44,8 +44,8 @@ CustomUploadFile = Annotated[UploadFile, WithJsonSchema({"type": "string", "form
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Load the previosly trained Keras model during the API startup"""
+async def lifespan(_app: FastAPI):
+    """Load the previously trained Keras model during API startup."""
     global model
     model_path = MODELS_DIR / "gan_busters.keras"
     if not model_path.is_file():
@@ -53,9 +53,9 @@ async def lifespan(app: FastAPI):
             tracking.initialize_mlflow()
             model = mlflow.keras.load_model(model_uri=f"models:/{REGISTERED_MODEL_NAME}/1")
             logger.info("Loaded registered model from: {}", REGISTERED_MODEL_NAME)
-        except Exception:
+        except Exception as exc:
             logger.exception("Failed to load model from MLflow Model Registry")
-            raise RuntimeError("Model could not be loaded from MLflow.")
+            raise RuntimeError("Model could not be loaded from MLflow.") from exc
     else:
         try:
             model = keras.models.load_model(model_path)
@@ -243,7 +243,10 @@ def _validate_and_decode_image(filename: str, content_type: str, content: bytes)
     response_model=BatchPredictionResponse,
     status_code=status.HTTP_200_OK,
     summary="Classify multiple images as REAL or FAKE.",
-    description="Accepts up to 10 JPEG/PNG images, validates format, preprocesses images and returns predictions.",
+    description=(
+        "Accepts up to 10 JPEG/PNG images, validates format, "
+        "preprocesses images and returns predictions."
+    ),
     responses={
         400: {"model": HTTPErrorDetail, "description": "Empty payload or corrupt image data."},
         413: {
@@ -446,6 +449,8 @@ def analytics_performance():
         },
     }
 
-@app.get('/favicon.ico', include_in_schema=False)
+
+@app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
+    """Return an empty response for favicon requests."""
     return Response(status_code=204)

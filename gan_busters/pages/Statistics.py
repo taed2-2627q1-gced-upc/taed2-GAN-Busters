@@ -1,6 +1,7 @@
+"""Streamlit page for displaying API statistics and resource utilization."""
 
+from datetime import datetime, timezone
 import os
-from datetime import datetime
 
 import pandas as pd
 import requests
@@ -65,8 +66,7 @@ try:
 except requests.RequestException as exc:
     st.error(f"Could not retrieve API statistics: {exc}")
     st.caption(
-        "Check that the API is running and that "
-        "GAN_BUSTERS_API_URL points to the correct address."
+        "Check that the API is running and that GAN_BUSTERS_API_URL points to the correct address."
     )
     st.stop()
 
@@ -80,23 +80,21 @@ mlflow = model["mlflow"]
 
 # Record a resource sample on each successful refresh
 sample = {
-    "timestamp": datetime.now(),
+    "timestamp": datetime.now(timezone.utc),
     "CPU utilization (%)": float(system["cpu_percent"]),
     "System memory (%)": float(system["memory_percent"]),
     "API process RAM (MB)": float(system["process_memory_mb"]),
 }
 
 st.session_state.resource_history.append(sample)
-st.session_state.resource_history = (
-    st.session_state.resource_history[-HISTORY_LIMIT:]
-)
+st.session_state.resource_history = st.session_state.resource_history[-HISTORY_LIMIT:]
 
 st.caption(
     f"Last updated: {sample['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} "
     f"| Refresh interval: "
-    f"{refresh_seconds}s" if auto_refresh else
-    f"Last updated: {sample['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} "
-    "| Auto-refresh paused"
+    f"{refresh_seconds}s"
+    if auto_refresh
+    else f"Last updated: {sample['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} | Auto-refresh paused"
 )
 
 # API overview
@@ -114,7 +112,7 @@ c2.metric(
 )
 c3.metric(
     "Error rate",
-    f'{requests_data["error_rate_percent"]:.2f}%',
+    f"{requests_data['error_rate_percent']:.2f}%",
 )
 c4.metric(
     "Prediction batches",
@@ -128,30 +126,27 @@ all_latency = latency["all"]
 predict_latency = latency["predictions"]
 
 c1, c2, c3 = st.columns(3)
-c1.metric("Average", f'{all_latency["avg_ms"]:.2f} ms')
-c2.metric("P95", f'{all_latency["p95_ms"]:.2f} ms')
-c3.metric("P99", f'{all_latency["p99_ms"]:.2f} ms')
+c1.metric("Average", f"{all_latency['avg_ms']:.2f} ms")
+c2.metric("P95", f"{all_latency['p95_ms']:.2f} ms")
+c3.metric("P99", f"{all_latency['p99_ms']:.2f} ms")
 
 st.write("**Prediction endpoint**")
 
 c1, c2, c3 = st.columns(3)
 c1.metric(
     "Average latency",
-    f'{predict_latency["avg_ms"]:.2f} ms',
+    f"{predict_latency['avg_ms']:.2f} ms",
 )
 c2.metric(
     "P95 latency",
-    f'{predict_latency["p95_ms"]:.2f} ms',
+    f"{predict_latency['p95_ms']:.2f} ms",
 )
 c3.metric(
     "P99 latency",
-    f'{predict_latency["p99_ms"]:.2f} ms',
+    f"{predict_latency['p99_ms']:.2f} ms",
 )
 
-st.caption(
-    "Latency is measured over retained request history, "
-    "not a fixed time window."
-)
+st.caption("Latency is measured over retained request history, not a fixed time window.")
 
 # HTTP response codes
 st.subheader("HTTP response codes")
@@ -160,10 +155,7 @@ status_counts = requests_data["status_counts"]
 
 if status_counts:
     status_df = pd.DataFrame(
-        [
-            {"Status code": str(code), "Requests": count}
-            for code, count in status_counts.items()
-        ]
+        [{"Status code": str(code), "Requests": count} for code, count in status_counts.items()]
     ).sort_values("Status code")
 
     st.bar_chart(
@@ -181,21 +173,19 @@ c1, c2, c3 = st.columns(3)
 
 c1.metric(
     "CPU utilization",
-    f'{system["cpu_percent"]:.1f}%',
+    f"{system['cpu_percent']:.1f}%",
 )
 c2.metric(
     "System memory",
-    f'{system["memory_percent"]:.1f}%',
+    f"{system['memory_percent']:.1f}%",
 )
 c3.metric(
     "API process RAM",
-    f'{system["process_memory_mb"]:.1f} MB',
+    f"{system['process_memory_mb']:.1f} MB",
 )
 
 # Historical resource charts
-history_df = pd.DataFrame(
-    st.session_state.resource_history
-).set_index("timestamp")
+history_df = pd.DataFrame(st.session_state.resource_history).set_index("timestamp")
 
 st.subheader("Resource utilization over time")
 
@@ -303,10 +293,7 @@ else:
         if metrics:
             st.write("**Training metrics**")
             metrics_df = pd.DataFrame(
-                [
-                    {"Metric": key, "Value": value}
-                    for key, value in metrics.items()
-                ]
+                [{"Metric": key, "Value": value} for key, value in metrics.items()]
             )
             st.dataframe(metrics_df, hide_index=True)
 
@@ -318,9 +305,7 @@ else:
                 }
             )
     else:
-        st.info(
-            "No training runs found in the configured experiment."
-        )
+        st.info("No training runs found in the configured experiment.")
 
     if registered:
         st.write("**Registered model**")
