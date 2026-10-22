@@ -92,6 +92,7 @@ if uploaded_files:
             st.subheader("Results")
 
             df = pd.DataFrame(results)
+            df = df.drop(labels="fake_probability", axis=1)
 
             # Expected fields from ImagePrediction:
             # filename, label, fake_probability, confidence_score
@@ -117,9 +118,6 @@ if uploaded_files:
                     st.progress(
                         min(1.0, max(0.0, confidence)),
                         text=f"Confidence: {confidence:.1%}",
-                    )
-                    st.write(
-                        f"Fake probability: {fake_probability:.1%}"
                     )
 
             csv = df.to_csv(index=False).encode("utf-8")
