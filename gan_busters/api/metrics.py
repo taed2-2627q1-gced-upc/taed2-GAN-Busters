@@ -1,3 +1,5 @@
+"""Collect and summarize API request, prediction, and system metrics."""
+
 from collections import Counter, deque
 from threading import Lock
 from time import time
@@ -19,6 +21,7 @@ def record_request(
     status_code: int,
     duration_ms: float,
 ) -> None:
+    """Record an HTTP request's metadata, status code, and execution time."""
     with _lock:
         _requests.append({
             "timestamp": time(),
@@ -31,11 +34,17 @@ def record_request(
 
 
 def record_batch(batch_size: int) -> None:
+    """Record the number of images processed in a prediction batch."""
     with _lock:
         _batches.append(batch_size)
 
 
 def get_snapshot() -> dict:
+    """Return a snapshot of API performance and system resource usage.
+
+    Include request counts, error rates, latency percentiles, prediction
+    batch statistics, and current CPU and memory utilization.
+    """
     with _lock:
         requests = list(_requests)
         batches = list(_batches)
@@ -50,6 +59,7 @@ def get_snapshot() -> dict:
     ]
 
     def latency_summary(values):
+        """Calculate summary statistics and latency percentiles in milliseconds."""
         if not values:
             return {
                 "count": 0,

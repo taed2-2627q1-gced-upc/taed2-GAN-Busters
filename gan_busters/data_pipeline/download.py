@@ -5,6 +5,7 @@ from loguru import logger
 
 from gan_busters.config import DATASET_SLUG, RAW_DATA_DIR
 
+
 def main():
     """Download the dataset from Kaggle into the raw data directory."""
     output_dir = RAW_DATA_DIR

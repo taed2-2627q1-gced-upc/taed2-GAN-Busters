@@ -1,8 +1,8 @@
 """Evaluate the registered GAN-Busters model on external datasets."""
 
+from loguru import logger
 import mlflow
 import pandas as pd
-from loguru import logger
 
 from gan_busters import config
 from gan_busters.modeling import tracking
@@ -25,11 +25,7 @@ def evaluate_external_model(
     results = {}
 
     for generator in config.EXTERNAL_GENERATORS:
-        records_path = (
-            config.EXTERNAL_PROCESSED_DIR
-            / generator
-            / "accepted_records.csv"
-        )
+        records_path = config.EXTERNAL_PROCESSED_DIR / generator / "accepted_records.csv"
 
         records = pd.read_csv(records_path)
 
@@ -45,24 +41,24 @@ def evaluate_external_model(
         )
 
         with tracking.start_run(generator):
-            tracking.log_params({
-                "dataset": "Tiny GenImage",
-                "generator": generator,
-                "model_uri": model_uri,
-                "threshold": threshold,
-                "batch_size": batch_size,
-                "test_records": len(test_records),
-                "resize_before_batch": True,
-            })
+            tracking.log_params(
+                {
+                    "dataset": "Tiny GenImage",
+                    "generator": generator,
+                    "model_uri": model_uri,
+                    "threshold": threshold,
+                    "batch_size": batch_size,
+                    "test_records": len(test_records),
+                    "resize_before_batch": True,
+                }
+            )
 
             tracking.log_metrics(metrics)
 
         results[generator] = metrics
 
         logger.success(
-            f"{generator}: "
-            f"Macro F1 = {metrics['macro_f1']:.4f}, "
-            f"ROC-AUC = {metrics['roc_auc']:.4f}"
+            f"{generator}: Macro F1 = {metrics['macro_f1']:.4f}, ROC-AUC = {metrics['roc_auc']:.4f}"
         )
 
     return results

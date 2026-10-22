@@ -13,17 +13,16 @@ The predefined CIFAKE test set is never used by this workflow.
 
 from loguru import logger
 import pandas as pd
-import tensorflow as tf  # pylint: disable=import-error
+import tensorflow as tf
 
 from gan_busters import config
-
-from gan_busters.modeling.architecture import build_model
-from gan_busters.modeling.train import train_model
-from gan_busters.modeling.evaluate import evaluate_model
 from gan_busters.modeling import tracking
+from gan_busters.modeling.architecture import build_model
+from gan_busters.modeling.evaluate import evaluate_model
+from gan_busters.modeling.train import train_model
 
 
-def run_experiment(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+def run_experiment(
     run_name: str,
     experiment_name: str = config.DEFAULT_MLFLOW_EXPERIMENT,
     kernel_size: int = config.DEFAULT_KERNEL_SIZE,
@@ -49,13 +48,9 @@ def run_experiment(  # pylint: disable=too-many-arguments,too-many-positional-ar
     # ---------------------------------------------------------
     records = pd.read_csv(config.ACCEPTED_RECORDS_PATH)
 
-    train_records = records[
-        records["split"] == "train"
-    ].copy()
+    train_records = records[records["split"] == "train"].copy()
 
-    validation_records = records[
-        records["split"] == "val"
-    ].copy()
+    validation_records = records[records["split"] == "val"].copy()
 
     # ---------------------------------------------------------
     # Build model
@@ -116,18 +111,15 @@ def run_experiment(  # pylint: disable=too-many-arguments,too-many-positional-ar
             batch_size=batch_size,
         )
 
-        best_epoch = (
-            history.history["val_loss"].index(
-                min(history.history["val_loss"])
-            )
-            + 1
-        )
+        best_epoch = history.history["val_loss"].index(min(history.history["val_loss"])) + 1
 
         tracking.log_history(history)
-        tracking.log_metrics({
-            "emissions_kg_co2": emissions,
-            "best_epoch": best_epoch,
-        })
+        tracking.log_metrics(
+            {
+                "emissions_kg_co2": emissions,
+                "best_epoch": best_epoch,
+            }
+        )
 
         metrics = evaluate_model(
             model=model,

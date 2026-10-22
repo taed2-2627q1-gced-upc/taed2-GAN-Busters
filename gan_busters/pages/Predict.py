@@ -1,3 +1,4 @@
+"""Provide a Streamlit interface for image classification through the GAN-Busters API."""
 
 import os
 

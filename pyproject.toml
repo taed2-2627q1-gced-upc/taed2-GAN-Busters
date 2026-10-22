@@ -36,3 +36,7 @@ testpaths = ["tests"]
 markers = [
     "robustness: Model robustness acceptance tests (NFR17)",
 ]
+
+[tool.pylint.typecheck]
+ignored-modules = ["tensorflow", "tensorflow.keras"]
+generated-members = ["tensorflow.*", "keras.*"]

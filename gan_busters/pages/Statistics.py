@@ -1,3 +1,5 @@
+"""Display API performance, system metrics, and MLflow model information."""
+
 import os
 
 import pandas as pd

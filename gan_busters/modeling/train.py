@@ -7,23 +7,23 @@ and MLflow configuration recovery.
 
 import ast
 
-from codecarbon import EmissionsTracker  # pylint: disable=import-error
+from codecarbon import EmissionsTracker
 from loguru import logger
-import mlflow  # pylint: disable=import-error
+import mlflow
 import pandas as pd
-from tensorflow import keras  # pylint: disable=import-error
+from tensorflow import keras
 
 from gan_busters import config
+from gan_busters.modeling import tracking
 from gan_busters.modeling.architecture import build_model
 from gan_busters.modeling.preprocessing import build_dataset
-from gan_busters.modeling import tracking
-
 
 # -------------------------------------------------------------------------
 # Reusable training function
 # -------------------------------------------------------------------------
 
-def train_model(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+
+def train_model(
     model: keras.Model,
     train_records: pd.DataFrame,
     optimizer: str,
@@ -43,24 +43,17 @@ def train_model(  # pylint: disable=too-many-arguments,too-many-positional-argum
 
     if set(train_records["label"]) != {"REAL", "FAKE"}:
         raise ValueError(
-            "Training requires both REAL and FAKE labels, "
-            "with no additional classes."
+            "Training requires both REAL and FAKE labels, with no additional classes."
         )
 
     if optimizer.lower() == "adam":
-        optimizer_instance = keras.optimizers.Adam(
-            learning_rate=learning_rate
-        )
+        optimizer_instance = keras.optimizers.Adam(learning_rate=learning_rate)
 
     elif optimizer.lower() == "rmsprop":
-        optimizer_instance = keras.optimizers.RMSprop(
-            learning_rate=learning_rate
-        )
+        optimizer_instance = keras.optimizers.RMSprop(learning_rate=learning_rate)
 
     else:
-        raise ValueError(
-            f"Unsupported optimizer: {optimizer}"
-        )
+        raise ValueError(f"Unsupported optimizer: {optimizer}")
 
     model.compile(
         optimizer=optimizer_instance,
@@ -77,15 +70,12 @@ def train_model(  # pylint: disable=too-many-arguments,too-many-positional-argum
     callbacks = []
 
     if validation_records is not None:
-
         if validation_records.empty:
             raise ValueError("Validation records cannot be empty.")
 
-
         if set(validation_records["label"]) != {"REAL", "FAKE"}:
             raise ValueError(
-                "Validation requires both REAL and FAKE labels, "
-                "with no additional classes."
+                "Validation requires both REAL and FAKE labels, with no additional classes."
             )
 
         validation_dataset = build_dataset(
@@ -129,6 +119,7 @@ def train_model(  # pylint: disable=too-many-arguments,too-many-positional-argum
 # MLflow configuration recovery
 # -------------------------------------------------------------------------
 
+
 def load_run_configuration(run_id: str) -> dict:
     """
     Retrieve and convert the configuration stored in an MLflow run.
@@ -160,6 +151,7 @@ def load_run_configuration(run_id: str) -> dict:
 # -------------------------------------------------------------------------
 # Final-training workflow
 # -------------------------------------------------------------------------
+
 
 def train_final_model(
     run_id: str,
@@ -199,7 +191,6 @@ def train_final_model(
     logger.info(f"Training final model on {len(full_train_records)} total training images...")
 
     with tracking.start_run(config.FINAL_MLFLOW_RUN_NAME):
-
         final_params = {
             **cfg,
             "source_run_id": run_id,
@@ -222,9 +213,11 @@ def train_final_model(
             carbon_project_name=config.CODECARBON_FINAL_TRAINING_PROJECT,
         )
 
-        tracking.log_metrics({
-            "emissions_kg_co2": emissions,
-        })
+        tracking.log_metrics(
+            {
+                "emissions_kg_co2": emissions,
+            }
+        )
 
         config.MODELS_DIR.mkdir(
             parents=True,

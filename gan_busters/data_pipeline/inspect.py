@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """
 Inspect the raw image dataset and generate a file-level inventory for
 downstream data integrity checks.
@@ -43,7 +42,7 @@ app = typer.Typer()
 # extract the split and label info from the directory structure
 def parse_image_path(rel_path: Path):
     """Extract and validate the split and label from an image path."""
-    parts = rel_path.parts # e.g. ("train", "FAKE", "image2.jpg")
+    parts = rel_path.parts  # e.g. ("train", "FAKE", "image2.jpg")
 
     # dataset with no split, e.g. REAL/image.jpg or FAKE/image.jpg
     if len(parts) == 2:
@@ -82,10 +81,11 @@ def inspect_image(path: Path):
         return "valid", file_hash
 
     except UnidentifiedImageError:
-        return "not_image", file_hash # the file is not a valid image format like jpg or png
+        return "not_image", file_hash  # the file is not a valid image format like jpg or png
 
     except OSError:
         return "corrupted", file_hash
+
 
 # currently the semantic classes are encoded in the filenames in between the ( )
 def extract_cifake_subclass(path: Path) -> str | None:
@@ -115,7 +115,6 @@ def main(
     records = []
 
     for path in tqdm(input_dir.rglob("*"), desc="Inspecting files"):
-
         # Ignore directories and KaggleHub metadata
         if not path.is_file() or ".complete" in path.parts:
             continue
@@ -160,7 +159,6 @@ def main(
 
         records.append(record)
 
-
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -180,10 +178,7 @@ def main(
         writer.writeheader()
         writer.writerows(records)
 
-    valid_count = sum(
-        record["status"] == "valid"
-        for record in records
-    )
+    valid_count = sum(record["status"] == "valid" for record in records)
 
     logger.success(
         f"Inspection complete: "

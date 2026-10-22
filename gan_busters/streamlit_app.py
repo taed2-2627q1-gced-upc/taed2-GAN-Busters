@@ -1,4 +1,7 @@
+"""Provide the GAN-Busters homepage and navigation to prediction and statistics pages."""
+
 import os
+
 import streamlit as st
 
 st.set_page_config(

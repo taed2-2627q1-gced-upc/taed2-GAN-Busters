@@ -9,27 +9,27 @@ Usage:
 """
 
 from pathlib import Path
-import typer
+
 from loguru import logger
+import typer
 
 from gan_busters import config
+from gan_busters.external_evaluation import evaluate_external_model
 from gan_busters.modeling.evaluate import evaluate_final_model
 from gan_busters.modeling.experiment import run_experiment
 from gan_busters.modeling.predict import predict_from_path
-from gan_busters.modeling.train import train_final_model
 from gan_busters.modeling.register import register_model
-from gan_busters.external_evaluation import evaluate_external_model
+from gan_busters.modeling.train import train_final_model
 
-app = typer.Typer(
-    help="GAN-Busters command-line interface."
-)
+app = typer.Typer(help="GAN-Busters command-line interface.")
+
 
 @app.command("experiment", help="Run a model-selection experiment.")
-def experiment(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def experiment(
     experiment_name: str = typer.Option(
-    config.DEFAULT_MLFLOW_EXPERIMENT,
-    "--experiment-name",
-    help="MLflow experiment name",
+        config.DEFAULT_MLFLOW_EXPERIMENT,
+        "--experiment-name",
+        help="MLflow experiment name",
     ),
     run_name: str = typer.Option(
         ...,
@@ -76,7 +76,8 @@ def experiment(  # pylint: disable=too-many-arguments,too-many-positional-argume
         padding=padding,
         pooling=pooling,
         dropout=dropout,
-)
+    )
+
 
 @app.command(
     "train",
@@ -105,6 +106,7 @@ def train(
         epochs=epochs,
         model_name=model_name,
     )
+
 
 @app.command("evaluate", help="Evaluate final model on test split")
 def evaluate(
@@ -176,16 +178,16 @@ def predict(
         output_file=output_file,
     )
 
-    logger.info(
-        f"Saved {len(predictions)} predictions to "
-        f"{config.PREDICTIONS_DIR / output_file}"
-    )
+    logger.info(f"Saved {len(predictions)} predictions to {config.PREDICTIONS_DIR / output_file}")
 
 
-@app.command("evaluate-external", help="Evaluate the registered model on Tiny GenImage external datasets.")
+@app.command(
+    "evaluate-external", help="Evaluate the registered model on Tiny GenImage external datasets."
+)
 def evaluate_external():
     """Evaluate the registered model on Tiny GenImage."""
     evaluate_external_model()
+
 
 if __name__ == "__main__":
     app()
