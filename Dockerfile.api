@@ -14,6 +14,7 @@ COPY gan_busters/api ./gan_busters/api
 COPY gan_busters/modeling/__init__.py ./gan_busters/modeling/__init__.py
 COPY gan_busters/modeling/predict.py ./gan_busters/modeling/predict.py
 COPY gan_busters/modeling/tracking.py ./gan_busters/modeling/tracking.py
+COPY gan_busters/modeling/preprocessing.py ./gan_busters/modeling/preprocessing.py
 
 COPY gan_busters/__init__.py ./gan_busters/__init__.py
 COPY gan_busters/config.py ./gan_busters/config.py

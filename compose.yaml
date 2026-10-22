@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile.api
     restart: unless-stopped
-    expose:
-      - "8081"
+    ports:
+      - "8081:8081"
     environment:
       PYTHONPATH: /app
 
@@ -18,6 +18,6 @@ services:
       - "8080:8080"
     environment:
       PYTHONPATH: /app
-      GAN_BUSTERS_API_URL: http://api:8080
+      GAN_BUSTERS_API_URL: http://api:8081
     depends_on:
       - api
